@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Media Docena | Contacto</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="layout">
+    <aside class="sidebar">
+        <div class="logo">La Media Docena</div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link">Inicio</a>
+            <a href="menu.html" class="sidebar__link">Menú</a>
+            <a href="carrito.html" class="sidebar__link">Carritos/Pedidos</a>
+            <a href="contacto.html" class="sidebar__link sidebar__link--active">Contacto</a>
+            <a href="admin.html" class="sidebar__link">Administración</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <header class="topbar">
+            <div class="topbar__title">Contacto</div>
+            <div class="topbar__user">👤</div>
+        </header>
+        <section class="panel" style="grid-template-columns: 1fr;">
+            <form class="hero" style="gap: 1.5rem;">
+                <div class="form">
+                    <div class="form__field">
+                        <label for="nombre">Nombre(s)</label>
+                        <input id="nombre" type="text" placeholder="Juan" required>
+                    </div>
+                    <div class="form__field">
+                        <label for="apellido">Apellido</label>
+                        <input id="apellido" type="text" placeholder="Pérez" required>
+                    </div>
+                    <div class="form__field">
+                        <label for="correo">Correo</label>
+                        <input id="correo" type="email" placeholder="usuario@email.com" required>
+                    </div>
+                    <div class="form__field">
+                        <label for="telefono">Teléfono</label>
+                        <input id="telefono" type="tel" placeholder="8123456789" required>
+                    </div>
+                </div>
+                <div class="form__field" style="grid-column: 1 / -1;">
+                    <label for="mensaje">Mensaje</label>
+                    <textarea id="mensaje" placeholder="Escribe tu mensaje" required></textarea>
+                </div>
+                <div class="hero__actions" style="justify-content: space-between;">
+                    <a class="btn" href="index.html">Inicio</a>
+                    <button class="btn btn--primary" type="submit">Enviar</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

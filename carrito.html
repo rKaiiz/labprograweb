@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Media Docena | Carrito</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="layout">
+    <aside class="sidebar">
+        <div class="logo">La Media Docena</div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link">Inicio</a>
+            <a href="menu.html" class="sidebar__link">Menú</a>
+            <a href="carrito.html" class="sidebar__link sidebar__link--active">Carritos/Pedidos</a>
+            <a href="contacto.html" class="sidebar__link">Contacto</a>
+            <a href="admin.html" class="sidebar__link">Administración</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <header class="topbar">
+            <div class="topbar__title">Carrito / Pedidos</div>
+            <div class="topbar__user">👤</div>
+        </header>
+        <section class="panel" style="grid-template-columns: 1fr;">
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+                <article class="card">
+                    <div style="display: flex; gap: 1rem;">
+                        <img src="https://images.unsplash.com/photo-1604908177796-e0782e5b9645?auto=format&fit=crop&w=400&q=80" alt="Tamales de res" style="width: 120px; height: 120px;">
+                        <div style="flex: 1; display: grid; gap: 0.5rem;">
+                            <h3 class="card__title">Tamales de res</h3>
+                            <div class="hero__actions" style="gap: 0.5rem;">
+                                <button class="btn">-</button>
+                                <span class="badge">2</span>
+                                <button class="btn">+</button>
+                            </div>
+                            <p>Total: $250.00</p>
+                            <button class="link" style="text-align: left;">Eliminar</button>
+                        </div>
+                    </div>
+                </article>
+                <article class="card">
+                    <div style="display: flex; gap: 1rem;">
+                        <img src="https://images.unsplash.com/photo-1504347538039-4d8d6e8b2b4f?auto=format&fit=crop&w=400&q=80" alt="Chile poblano" style="width: 120px; height: 120px;">
+                        <div style="flex: 1; display: grid; gap: 0.5rem;">
+                            <h3 class="card__title">Chile poblano</h3>
+                            <div class="hero__actions" style="gap: 0.5rem;">
+                                <button class="btn">-</button>
+                                <span class="badge">1</span>
+                                <button class="btn">+</button>
+                            </div>
+                            <p>Total: $180.00</p>
+                            <button class="link" style="text-align: left;">Eliminar</button>
+                        </div>
+                    </div>
+                </article>
+                <article class="card">
+                    <div style="display: flex; gap: 1rem;">
+                        <img src="https://images.unsplash.com/photo-1543339308-43e59d6b73a6?auto=format&fit=crop&w=400&q=80" alt="Pozole" style="width: 120px; height: 120px;">
+                        <div style="flex: 1; display: grid; gap: 0.5rem;">
+                            <h3 class="card__title">Pozole tradicional</h3>
+                            <div class="hero__actions" style="gap: 0.5rem;">
+                                <button class="btn">-</button>
+                                <span class="badge">1</span>
+                                <button class="btn">+</button>
+                            </div>
+                            <p>Total: $150.00</p>
+                            <button class="link" style="text-align: left;">Eliminar</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+            <div class="hero" style="max-width: 420px; margin-left: auto;">
+                <div class="card__meta" style="font-size: 1.2rem;">
+                    <span>Total:</span>
+                    <span>$680.00 MXN</span>
+                </div>
+                <p style="color: var(--muted);">*Los precios incluyen impuestos. Verifica tu pedido antes de confirmar.</p>
+                <div class="hero__actions" style="justify-content: space-between;">
+                    <a class="btn" href="menu.html">Menú</a>
+                    <a class="btn btn--primary" href="#">Realizar pedido</a>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

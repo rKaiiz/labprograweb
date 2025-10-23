@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Media Docena | Administración</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="layout">
+    <aside class="sidebar">
+        <div class="logo">La Media Docena</div>
+        <nav class="sidebar__nav">
+            <a href="index.html" class="sidebar__link">Inicio</a>
+            <a href="menu.html" class="sidebar__link">Menú</a>
+            <a href="carrito.html" class="sidebar__link">Carritos/Pedidos</a>
+            <a href="contacto.html" class="sidebar__link">Contacto</a>
+            <a href="admin.html" class="sidebar__link sidebar__link--active">Administración</a>
+        </nav>
+    </aside>
+    <main class="content">
+        <header class="topbar">
+            <div class="topbar__title">Administración</div>
+            <div class="topbar__user">👤</div>
+        </header>
+        <section class="panel" style="grid-template-columns: 1fr;">
+            <div class="hero" style="gap: 1.5rem;">
+                <div class="filter-row">
+                    <label style="flex: 1;">
+                        Buscar...
+                        <input class="filter" type="search" placeholder="Buscar platillo">
+                    </label>
+                    <label>
+                        Categoría
+                        <select class="filter">
+                            <option>Todos</option>
+                            <option>Bebidas</option>
+                            <option>Postres</option>
+                            <option>Platos fuertes</option>
+                        </select>
+                    </label>
+                    <label>
+                        Disponibilidad
+                        <select class="filter">
+                            <option>Todos</option>
+                            <option>Disponible</option>
+                            <option>Agotado</option>
+                        </select>
+                    </label>
+                    <button class="btn btn--primary" style="align-self: flex-end;">Nuevo platillo</button>
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Platillo</th>
+                            <th>Categoría</th>
+                            <th>Precio</th>
+                            <th>Disponibilidad</th>
+                            <th>Imagen</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>01</td>
+                            <td>Agua fresca de jamaica</td>
+                            <td>Bebidas</td>
+                            <td>$30.00</td>
+                            <td><span class="badge">Disponible</span></td>
+                            <td>📷</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn">✏️</button>
+                                    <button class="btn">🗑️</button>
+                                    <button class="btn">👁️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>02</td>
+                            <td>Refresco de cola</td>
+                            <td>Bebidas</td>
+                            <td>$25.00</td>
+                            <td><span class="badge">Disponible</span></td>
+                            <td>📷</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn">✏️</button>
+                                    <button class="btn">🗑️</button>
+                                    <button class="btn">👁️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>03</td>
+                            <td>Café americano</td>
+                            <td>Bebidas</td>
+                            <td>$25.00</td>
+                            <td><span class="badge">Disponible</span></td>
+                            <td>📷</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn">✏️</button>
+                                    <button class="btn">🗑️</button>
+                                    <button class="btn">👁️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>04</td>
+                            <td>Arroz con leche</td>
+                            <td>Postres</td>
+                            <td>$35.00</td>
+                            <td><span class="badge">Disponible</span></td>
+                            <td>📷</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn">✏️</button>
+                                    <button class="btn">🗑️</button>
+                                    <button class="btn">👁️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>05</td>
+                            <td>Tres leches</td>
+                            <td>Postres</td>
+                            <td>$50.00</td>
+                            <td><span class="badge">Disponible</span></td>
+                            <td>📷</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn">✏️</button>
+                                    <button class="btn">🗑️</button>
+                                    <button class="btn">👁️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>06</td>
+                            <td>Flan de vainilla</td>
+                            <td>Postres</td>
+                            <td>$42.00</td>
+                            <td><span class="badge">Agotado</span></td>
+                            <td>📷</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn">✏️</button>
+                                    <button class="btn">🗑️</button>
+                                    <button class="btn">👁️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Media Docena | Registro</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="layout" style="grid-template-columns: 1fr;">
+    <main class="content">
+        <header class="topbar">
+            <div class="topbar__title">Registrar usuario</div>
+            <div class="topbar__user">👤</div>
+        </header>
+        <section class="panel" style="grid-template-columns: 1fr;">
+            <form class="hero" style="max-width: 520px; margin: 0 auto; gap: 1.5rem;">
+                <div class="form">
+                    <div class="form__field">
+                        <label for="reg-nombre">Nombre(s)</label>
+                        <input id="reg-nombre" type="text" placeholder="Juan" required>
+                    </div>
+                    <div class="form__field">
+                        <label for="reg-apellido">Apellido</label>
+                        <input id="reg-apellido" type="text" placeholder="Pérez" required>
+                    </div>
+                    <div class="form__field">
+                        <label for="reg-correo">Correo</label>
+                        <input id="reg-correo" type="email" placeholder="usuario@email.com" required>
+                    </div>
+                    <div class="form__field">
+                        <label for="reg-telefono">Teléfono</label>
+                        <input id="reg-telefono" type="tel" placeholder="8123456789" required>
+                    </div>
+                </div>
+                <div class="form__field" style="grid-column: 1 / -1;">
+                    <label for="reg-password">Contraseña</label>
+                    <input id="reg-password" type="password" placeholder="********" required>
+                </div>
+                <div class="hero__actions" style="justify-content: space-between;">
+                    <a class="btn" href="login.html">Cancelar</a>
+                    <button class="btn btn--primary" type="submit">Registrar</button>
+                </div>
+                <p style="text-align: center;">¿Ya tienes cuenta? <a class="link" href="login.html">Inicia sesión</a></p>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
