@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Reseñas · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="resenas">
+  <main class="container">
+    <div class="card" style="margin-bottom:16px">
+      <form id="formReview">
+        <div class="form-row">
+          <div class="col">
+            <label>Nombre</label>
+            <input class="input" name="name" required placeholder="Tu nombre">
+          </div>
+          <div class="col">
+            <label>Calificación</label>
+            <select name="rating" class="input" required>
+              <option value="5">5 - Excelente</option>
+              <option value="4">4 - Muy bueno</option>
+              <option value="3">3 - Bueno</option>
+              <option value="2">2 - Regular</option>
+              <option value="1">1 - Malo</option>
+            </select>
+          </div>
+        </div>
+        <div class="col" style="margin-top:12px">
+          <label>Comentario</label>
+          <textarea class="input" name="comment" rows="4" required placeholder="Cuéntanos tu experiencia"></textarea>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn" type="submit">Enviar reseña</button>
+          <button class="btn secondary" type="reset">Limpiar</button>
+        </div>
+      </form>
+    </div>
+
+    <section id="reviews" class="grid"></section>
+  </main>
+
+  <script>
+  const KEY = 'lmd_reviews';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch { return [] } }
+  const save = (list) => localStorage.setItem(KEY, JSON.stringify(list));
+
+  function stars(n){ return '<span class="rating">' + '★'.repeat(n) + '<span style="color:#ccc">' + '☆'.repeat(5-n) + '</span></span>'; }
+
+  function render(){
+    const wrap = document.getElementById('reviews');
+    const list = load();
+    if(list.length===0){ wrap.innerHTML = '<div class="card">Aún no hay reseñas. ¡Sé la primera persona en opinar!</div>'; return; }
+    wrap.classList.add('cards');
+    wrap.innerHTML = list.map(r => `
+      <article class="review card">
+        <strong>${r.name}</strong> <span class="badge">${new Date(r.ts).toLocaleDateString()}</span><br>
+        ${stars(r.rating)}
+        <p>${r.comment}</p>
+      </article>`).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    render();
+    document.getElementById('formReview').addEventListener('submit', e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const item = { name: fd.get('name'), rating: Number(fd.get('rating')), comment: fd.get('comment'), ts: Date.now() };
+      const list = load(); list.unshift(item); save(list);
+      e.target.reset();
+      render();
+    });
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Menú · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="menu">
+  <main class="container">
+    <div class="card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <strong>Categoría:</strong>
+      <select id="cat"></select>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <a class="btn" href="pedidos.html">Ver carrito</a>
+      </div>
+    </div>
+    <section class="grid cards" id="list"></section>
+  </main>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const catSel = document.getElementById('cat');
+    const list = document.getElementById('list');
+    const {categories, products} = window.APP_DATA;
+
+    catSel.innerHTML = `<option value="all">Todos</option>` + categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+    function render(){
+      const cat = catSel.value;
+      const items = products.filter(p=> cat==='all' || p.category===cat);
+      list.innerHTML = items.map(p => `
+        <article class="card product">
+          <img src="${p.img}" alt="${p.name}">
+          <div>
+            <h3>${p.name}</h3>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <span class="price">${$app.formatCurrency(p.price)}</span>
+              <button class="btn" data-id="${p.id}">Agregar</button>
+            </div>
+          </div>
+        </article>`).join('');
+      list.querySelectorAll('button[data-id]').forEach(btn=>{
+        btn.addEventListener('click', () => $app.addToCart(btn.dataset.id, 1));
+      });
+    }
+
+    catSel.addEventListener('change', render);
+    render();
+  });
+  </script>
+</body>
+</html>

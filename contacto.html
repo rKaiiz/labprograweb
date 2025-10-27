@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Contacto · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="contacto">
+  <main class="container">
+    <div class="card">
+      <form id="contactForm">
+        <div class="form-row">
+          <div class="col">
+            <label>Nombre(s)</label>
+            <input class="input" name="nombre" required placeholder="Juan">
+          </div>
+          <div class="col">
+            <label>Apellido(s)</label>
+            <input class="input" name="apellidos" required placeholder="Pérez">
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div class="col">
+            <label>Correo</label>
+            <input class="input" type="email" name="correo" required placeholder="usuario@correo.com">
+          </div>
+          <div class="col">
+            <label>Teléfono</label>
+            <input class="input" name="telefono" required placeholder="8123456789">
+          </div>
+        </div>
+        <div class="col" style="margin-top:12px">
+          <label>Mensaje</label>
+          <textarea class="input" name="mensaje" rows="6" required></textarea>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+          <a href="index.html" class="btn secondary">Inicio</a>
+          <button class="btn" type="submit">Enviar</button>
+        </div>
+      </form>
+    </div>
+  </main>
+  <script>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const form = document.getElementById('contactForm');
+    form.addEventListener('submit', e=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+      console.log('Contacto (demo):', data);
+      alert('¡Gracias por contactarnos! Te responderemos pronto.');
+      form.reset();
+    })
+  })
+  </script>
+</body>
+</html>

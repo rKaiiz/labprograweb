@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Carrito / Pedidos · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="pedidos">
+  <main class="container">
+    <section class="cart-list" id="cartList"></section>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px">
+      <div class="total" id="total">$ 0.00 MXN</div>
+      <div style="display:flex;gap:8px">
+        <a class="btn secondary" href="menu.html">Seguir comprando</a>
+        <button class="btn" id="checkout">Realizar Pedido</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  function render(){
+    const container = document.getElementById('cartList');
+    const cart = $app.getCart();
+    const products = (window.APP_DATA?.products)||[];
+
+    if(cart.length===0){
+      container.innerHTML = `<div class="card">Tu carrito está vacío. <a href="menu.html">Ir al menú</a></div>`;
+      document.getElementById('total').textContent = $app.formatCurrency(0);
+      return;
+    }
+
+    let total = 0;
+    container.innerHTML = cart.map(item => {
+      const p = products.find(pp => pp.id===item.id);
+      const line = p.price * item.qty; total += line;
+      return `
+        <div class="cart-item">
+          <img src="${p.img}" alt="${p.name}">
+          <div>
+            <strong>${p.name}</strong><br>
+            <small>${$app.formatCurrency(p.price)} c/u</small>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <div class="qty">
+              <button aria-label="menos" data-minus="${p.id}">−</button>
+              <span>${item.qty}</span>
+              <button aria-label="más" data-plus="${p.id}">+</button>
+            </div>
+            <div>${$app.formatCurrency(line)}</div>
+            <button class="btn danger" data-remove="${p.id}">Eliminar</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('total').textContent = $app.formatCurrency(total);
+
+    container.querySelectorAll('[data-minus]').forEach(b=> b.addEventListener('click',()=>{ $app.updateQty(b.dataset.minus, -1); render(); }));
+    container.querySelectorAll('[data-plus]').forEach(b=> b.addEventListener('click',()=>{ $app.updateQty(b.dataset.plus, +1); render(); }));
+    container.querySelectorAll('[data-remove]').forEach(b=> b.addEventListener('click',()=>{ $app.removeFromCart(b.dataset.remove); render(); }));
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    render();
+    document.getElementById('checkout').addEventListener('click', () => {
+      if($app.getCart().length===0){ alert('Agrega productos al carrito primero.'); return; }
+      alert('¡Pedido realizado! (demo)');
+      $app.setCart([]);
+      render();
+    });
+  });
+  </script>
+</body>
+</html>
