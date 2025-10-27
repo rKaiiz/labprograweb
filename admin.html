@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Panel de Administración · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 14px">Panel de Administración</h2>
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
+      <a class="btn" href="admin-platillos.html">Gestionar Platillos</a>
+      <a class="btn" href="admin-pedidos.html">Gestionar Pedidos</a>
+      <a class="btn" href="admin-resenas.html">Gestionar Reseñas</a>
+    </div>
+  </main>
+  <script>
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if(!$app.isAdmin()){
+      const next = 'admin.html';
+      location.href = 'login.html?next='+encodeURIComponent(next);
+    }
+  });
+  </script>
+</body>
+</html>

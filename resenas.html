@@ -51,8 +51,8 @@
 
   function render(){
     const wrap = document.getElementById('reviews');
-    const list = load();
-    if(list.length===0){ wrap.innerHTML = '<div class="card">Aún no hay reseñas. ¡Sé la primera persona en opinar!</div>'; return; }
+    const list = load().filter(r => (r.status ?? 'aprobada') === 'aprobada');
+    if(list.length===0){ wrap.innerHTML = '<div class="card">Aún no hay reseñas publicadas. ¡Sé la primera persona en opinar!</div>'; return; }
     wrap.classList.add('cards');
     wrap.innerHTML = list.map(r => `
       <article class="review card">
@@ -67,9 +67,11 @@
     document.getElementById('formReview').addEventListener('submit', e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      const item = { name: fd.get('name'), rating: Number(fd.get('rating')), comment: fd.get('comment'), ts: Date.now() };
-      const list = load(); list.unshift(item); save(list);
+      const list = load();
+      const item = { id: (list[0]?.id||0)+1, name: fd.get('name'), rating: Number(fd.get('rating')), comment: fd.get('comment'), ts: Date.now(), status: 'pendiente' };
+      list.unshift(item); save(list);
       e.target.reset();
+      alert('¡Gracias! Tu reseña será visible cuando el administrador la apruebe.');
       render();
     });
   });

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Gestión de Reseñas (Admin) · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 12px">Gestión de Reseñas</h2>
+
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input id="search" class="input" style="max-width:260px" placeholder="Buscar por nombre o texto...">
+        <label style="margin-left:auto">Estado</label>
+        <select id="filter" class="input" style="max-width:180px">
+          <option value="all">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="aprobada">Aprobada</option>
+          <option value="rechazada">Rechazada</option>
+        </select>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Folio</th><th>Nombre</th><th>Fecha</th><th>Calificación</th><th>Comentario</th><th>Estado</th><th class="actions">Acciones</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+  const KEY='lmd_reviews';
+  const load=()=>{ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return []} };
+  const save=list=>localStorage.setItem(KEY, JSON.stringify(list));
+
+  function render(){
+    const q = document.getElementById('search').value.toLowerCase();
+    const f = document.getElementById('filter').value;
+    const tbody = document.getElementById('tbody');
+    const list = load()
+      .filter(r => (f==='all' || (r.status||'aprobada')===f))
+      .filter(r => (r.name||'').toLowerCase().includes(q) || (r.comment||'').toLowerCase().includes(q));
+
+    if(list.length===0){ tbody.innerHTML = `<tr><td colspan="7">Sin resultados</td></tr>`; return; }
+
+    tbody.innerHTML = list.map(r=>`
+      <tr>
+        <td>#${r.id ?? '-'}</td>
+        <td>${r.name}</td>
+        <td>${new Date(r.ts).toLocaleDateString()}</td>
+        <td>${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</td>
+        <td>${r.comment}</td>
+        <td>
+          <select data-status="${r.id}" class="input" style="padding:6px 10px">
+            ${['pendiente','aprobada','rechazada'].map(s=>`<option ${s=== (r.status||'aprobada') ? 'selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td class="actions">
+          <button class="btn danger" data-del="${r.id}">Eliminar</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
+      if(!confirm('¿Eliminar reseña?')) return;
+      const list = load().filter(x=>x.id!==Number(b.dataset.del));
+      save(list); render();
+    }));
+
+    tbody.querySelectorAll('[data-status]').forEach(sel=> sel.addEventListener('change', ()=>{
+      const id = Number(sel.dataset.status);
+      const list = load();
+      const it = list.find(x=>x.id===id);
+      if(it){ it.status = sel.value; save(list); }
+    }));
+  }
+
+  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-resenas.html'); } }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ensure();
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filter').addEventListener('change', render);
+    render();
+  });
+  </script>
+</body>
+</html>

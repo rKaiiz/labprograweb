@@ -66,7 +66,19 @@
     render();
     document.getElementById('checkout').addEventListener('click', () => {
       if($app.getCart().length===0){ alert('Agrega productos al carrito primero.'); return; }
-      alert('¡Pedido realizado! (demo)');
+      const cart = $app.getCart();
+      const prods = $app.getProducts();
+      const items = cart.map(ci=>{
+        const p = prods.find(pp=>pp.id===ci.id); return { id:p.id, name:p.name, price:p.price, qty:ci.qty };
+      });
+      const total = items.reduce((a,i)=>a+i.price*i.qty,0);
+      const user = $app.getUser();
+      const orderId = $app.addOrder({
+        items, total, status:'En Proceso',
+        customer: user?.name || 'Invitado',
+        ts: Date.now()
+      });
+      alert('¡Pedido realizado! Tu folio es #' + orderId);
       $app.setCart([]);
       render();
     });

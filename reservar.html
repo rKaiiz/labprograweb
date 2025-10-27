@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Reservar una Mesa · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="reservar">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 14px">Reservar una Mesa</h2>
+    <div class="card">
+      <form id="resForm">
+        <div class="form-row">
+          <div class="col">
+            <label>Nombre</label>
+            <input class="input" name="nombre" required placeholder="Juan">
+          </div>
+          <div class="col">
+            <label>Número de Personas</label>
+            <input class="input" name="personas" type="number" min="1" max="20" required placeholder="2">
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div class="col">
+            <label>Teléfono</label>
+            <input class="input" name="telefono" required placeholder="0000000000" pattern="[0-9]{10}">
+          </div>
+          <div class="col">
+            <label>Fecha</label>
+            <input class="input" name="fecha" type="date" required>
+          </div>
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div class="col">
+            <label>Hora</label>
+            <input class="input" name="hora" type="time" required>
+          </div>
+          <div class="col"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;justify-content:space-between">
+          <a class="btn secondary" href="index.html">Inicio</a>
+          <button class="btn" type="submit">Confirmar Reservación</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+  const KEY = 'lmd_reservas';
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return [] } }
+  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); }
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const form = document.getElementById('resForm');
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const item = Object.fromEntries(fd.entries());
+      item.ts = Date.now();
+      const list = load(); list.push(item); save(list);
+      alert('¡Reserva registrada! Nos pondremos en contacto para confirmarla.');
+      form.reset();
+    })
+  })
+  </script>
+</body>
+</html>

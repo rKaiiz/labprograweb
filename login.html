@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Acceder · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="login">
+  <main class="container">
+    <section class="hero">
+      <div style="background:url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1400&auto=format&fit=crop') center/cover;height:380px;border-radius:14px"></div>
+      <div class="panel">
+        <h1 style="text-align:center">Bienvenido</h1>
+        <form id="loginForm">
+          <label>Correo o usuario</label>
+          <input class="input" name="user" required placeholder="admin@lmd.com">
+          <label style="margin-top:10px">Contraseña</label>
+          <input class="input" type="password" name="pass" required placeholder="••••••">
+          <div style="display:flex;gap:12px;justify-content:center;margin-top:16px">
+            <button class="btn" type="submit">Iniciar sesión</button>
+            <a class="btn secondary" href="index.html">Cancelar</a>
+          </div>
+          <p style="font-size:12px;color:#222;margin-top:10px">Demo: admin@lmd.com / admin123 • cliente@lmd.com / 123456</p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  const DEMO = [
+    { user:'admin@lmd.com', pass:'admin123', name:'Admin', role:'admin' },
+    { user:'cliente@lmd.com', pass:'123456', name:'Cliente', role:'user' }
+  ];
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const form = document.getElementById('loginForm');
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const u = fd.get('user');
+      const p = fd.get('pass');
+      const found = DEMO.find(x=>x.user===u && x.pass===p);
+      if(!found){ alert('Credenciales inválidas'); return; }
+      $app.setUser({ name:found.name, email:found.user, role:found.role });
+      const next = new URLSearchParams(location.search).get('next') || 'index.html';
+      location.href = next;
+    });
+  });
+  </script>
+</body>
+</html>

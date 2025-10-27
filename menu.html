@@ -24,13 +24,13 @@
   document.addEventListener('DOMContentLoaded', () => {
     const catSel = document.getElementById('cat');
     const list = document.getElementById('list');
-    const {categories, products} = window.APP_DATA;
+    const {categories} = window.APP_DATA;
 
     catSel.innerHTML = `<option value="all">Todos</option>` + categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
 
     function render(){
       const cat = catSel.value;
-      const items = products.filter(p=> cat==='all' || p.category===cat);
+      const items = $app.getProducts().filter(p=> (p.available!==false) && (cat==='all' || p.category===cat));
       list.innerHTML = items.map(p => `
         <article class="card product">
           <img src="${p.img}" alt="${p.name}">

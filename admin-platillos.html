@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Platillos (Admin) · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 12px">Platillos</h2>
+
+    <div class="card" style="margin-bottom:12px">
+      <form id="newForm" style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;align-items:end">
+        <div>
+          <label>Nombre</label>
+          <input class="input" name="name" required>
+        </div>
+        <div>
+          <label>Categoría</label>
+          <select class="input" name="category" id="newCat" required></select>
+        </div>
+        <div>
+          <label>Precio</label>
+          <input class="input" name="price" type="number" min="1" required>
+        </div>
+        <div>
+          <label>Imagen (URL)</label>
+          <input class="input" name="img" placeholder="https://...">
+        </div>
+        <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn" type="submit">Nuevo Platillo</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input id="search" class="input" style="max-width:260px" placeholder="Buscar...">
+        <label style="margin-left:auto">Categoría</label>
+        <select id="cat" class="input" style="max-width:200px"></select>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Disponible</th><th class="actions">Acciones</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-platillos.html'); } }
+
+  function render(){
+    const tbody = document.getElementById('tbody');
+    const q = document.getElementById('search').value.toLowerCase();
+    const cat = document.getElementById('cat').value;
+    const list = $app.getProducts()
+      .filter(p => (cat==='all' || p.category===cat))
+      .filter(p => p.name.toLowerCase().includes(q));
+
+    tbody.innerHTML = list.map(p=>`
+      <tr>
+        <td>${p.name}</td>
+        <td>${p.category}</td>
+        <td>${$app.formatCurrency(p.price)}</td>
+        <td><input type="checkbox" data-avail="${p.id}" ${p.available!==false? 'checked':''}></td>
+        <td class="actions">
+          <button class="btn danger" data-del="${p.id}">Eliminar</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
+      const list = $app.getProducts().filter(x=>x.id!==b.dataset.del);
+      $app.saveProducts(list); render();
+    }));
+
+    tbody.querySelectorAll('[data-avail]').forEach(inp=> inp.addEventListener('change', ()=>{
+      const list = $app.getProducts();
+      const p = list.find(x=>x.id===inp.dataset.avail);
+      if(p){ p.available = inp.checked; $app.saveProducts(list); }
+    }));
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ensure();
+    const catSel = document.getElementById('cat');
+    const cats = (window.APP_DATA?.categories)||[];
+    catSel.innerHTML = `<option value="all">Todos</option>` + cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    const newCat = document.getElementById('newCat');
+    newCat.innerHTML = cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+    document.getElementById('search').addEventListener('input', render);
+    catSel.addEventListener('change', render);
+
+    document.getElementById('newForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const list = $app.getProducts();
+      const id = fd.get('name').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + (Math.random()*1e4|0);
+      list.push({ id, name:fd.get('name'), category:fd.get('category'), price:Number(fd.get('price')), img:fd.get('img')||'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800&auto=format&fit=crop', available:true });
+      $app.saveProducts(list);
+      e.target.reset();
+      render();
+    });
+
+    render();
+    addEventListener('products:changed', render);
+  });
+  </script>
+</body>
+</html>
