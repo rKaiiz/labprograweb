@@ -6,7 +6,9 @@
     user: 'lmd_user',
     orders: 'lmd_orders',
     products: 'lmd_products',
-    reservas: 'lmd_reservas'
+    reservas: 'lmd_reservas',
+    users: 'lmd_users',
+    about: 'lmd_about'
   };
   const qs = (sel, el=document) => el.querySelector(sel);
   const qsa = (sel, el=document) => Array.from(el.querySelectorAll(sel));
@@ -61,6 +63,33 @@
     return id;
   }
   function updateOrder(id, patch){ const list=listOrders(); const o=list.find(x=>x.id===id); if(!o) return; Object.assign(o, patch); saveOrders(list); }
+
+  // Users
+  function getUsers(){
+    const raw = localStorage.getItem(STORAGE_KEYS.users);
+    if(raw){ try{ return JSON.parse(raw); }catch{ /* ignore */ } }
+    // seed demo users
+    const seed = [
+      { id:1, name:'Admin Nombre', email:'admin@lmd.com', phone:'0000000000', role:'admin' },
+      { id:2, name:'Cliente Nombre', email:'cliente@lmd.com', phone:'0000000000', role:'user' }
+    ];
+    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(seed));
+    return seed;
+  }
+  function saveUsers(list){ localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(list)); dispatchEvent(new CustomEvent('users:changed')); }
+
+  // About us content
+  function getAbout(){
+    const raw = localStorage.getItem(STORAGE_KEYS.about);
+    if(raw){ try{ return JSON.parse(raw); }catch{/* ignore */} }
+    return {
+      name:'La Media Docena',
+      descripcion:'En La Media Docena celebramos la cocina mexicana con recetas de casa, tortillas al momento e ingredientes frescos de productores locales. Un lugar familiar, sabroso y auténtico.',
+      mision:'Ofrecer comida mexicana auténtica y de calidad, preparada al momento con ingredientes frescos y locales, brindando un servicio cálido que haga sentir a cada persona como en casa.',
+      vision:'Ser el restaurante mexicano de referencia en la ciudad, reconocido por su servicio y compromiso con la tradición, creciendo de forma sostenible y expandiéndonos sin perder nuestra esencia.'
+    };
+  }
+  function saveAbout(data){ localStorage.setItem(STORAGE_KEYS.about, JSON.stringify(data)); dispatchEvent(new CustomEvent('about:changed')); }
 
   // Layout rendering
   function renderLayout(){
@@ -125,7 +154,11 @@
     // products
     getProducts, saveProducts,
     // orders
-    listOrders, addOrder, updateOrder
+    listOrders, addOrder, updateOrder,
+    // users
+    getUsers, saveUsers,
+    // about
+    getAbout, saveAbout
   };
 
   document.addEventListener('DOMContentLoaded', renderLayout);

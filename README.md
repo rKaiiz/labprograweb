@@ -15,6 +15,10 @@ Primer entrega: pantallas generales (usuarios y admin comparten navegación) sig
 - `admin.html` – Panel de administración (solo admin)
 - `admin-platillos.html` – Gestión de platillos con disponibilidad y alta
 - `admin-pedidos.html` – Gestión de pedidos generados en checkout
+- `admin-resenas.html` – Moderación de reseñas (aprobar/rechazar)
+- `admin-usuarios.html` – CRUD de usuarios demo (nombre, correo, teléfono y rol)
+- `admin-reporte.html` – KPIs y listados simples por periodo (usa pedidos locales)
+- `admin-aboutus.html` – Editor del contenido de “Acerca de nosotros”
 - `assets/css/styles.css` – Estilos base con layout y componentes
 - `assets/js/data.js` – Datos de ejemplo (categorías y productos)
 - `assets/js/main.js` – Navegación lateral, cabecera y lógica compartida (carrito en localStorage)
@@ -34,6 +38,7 @@ Recomendado (para rutas relativas correctas y auto‑recarga): usa la extensión
 3. En `Reseñas` puedes enviar una reseña (se guarda localmente).
 4. `Contacto` envía un mensaje de prueba (solo muestra un aviso y resetea el formulario).
 5. `Reservar una mesa` guarda reservas de ejemplo en localStorage.
+6. Panel de administración: accede a platillos, pedidos, reseñas, usuarios, reportes y edición de “Acerca de nosotros”.
 
 ## Notas y próximos pasos
 

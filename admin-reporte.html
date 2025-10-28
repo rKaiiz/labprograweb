@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Reportes (Admin) · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 12px">Reportes</h2>
+
+    <div class="card" style="margin-bottom:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <strong>Filtro por periodo:</strong>
+        <button class="btn" data-range="today">Hoy</button>
+        <button class="btn" data-range="last7">Últimos 7 días</button>
+        <button class="btn" data-range="month">Este mes</button>
+        <button class="btn secondary" data-range="all">Todos</button>
+      </div>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:12px">
+        <div class="card"><div>VENTAS TOTALES</div><h3 id="totalVentas">$0</h3></div>
+        <div class="card"><div>PEDIDOS COMPLETADOS</div><h3 id="pedidosCompletados">0</h3></div>
+        <div class="card"><div>TICKET PROMEDIO</div><h3 id="ticketProm">$0</h3></div>
+      </div>
+      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:12px">
+        <div class="card">
+          <strong>Ventas por Día</strong>
+          <div id="sparkDia" style="font-family:monospace;white-space:pre"></div>
+        </div>
+        <div class="card">
+          <strong>Platillos más vendidos</strong>
+          <div id="topPlatillos"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-reporte.html'); } }
+
+  function inRange(ts, range){
+    const d = new Date(ts); const now = new Date();
+    if(range==='today'){
+      const s = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      return ts >= s;
+    }
+    if(range==='last7'){
+      const s = now.getTime() - 7*24*60*60*1000; return ts >= s;
+    }
+    if(range==='month'){
+      const s = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); return ts >= s;
+    }
+    return true; // all
+  }
+
+  function sparkline(values){
+    if(values.length===0) return '';
+    const min = Math.min(...values), max = Math.max(...values)||1;
+    const blocks = '▁▂▃▄▅▆▇█';
+    return values.map(v=> blocks[Math.round((v-min)/(max-min||1)*(blocks.length-1))]).join(' ');
+  }
+
+  let RANGE='last7';
+  function render(){
+    const orders = $app.listOrders().filter(o=> inRange(o.ts, RANGE));
+    const total = orders.reduce((a,o)=>a+o.total,0);
+    const count = orders.length;
+    const avg = count? total/count : 0;
+
+    document.getElementById('totalVentas').textContent = $app.formatCurrency(total);
+    document.getElementById('pedidosCompletados').textContent = String(count);
+    document.getElementById('ticketProm').textContent = $app.formatCurrency(avg);
+
+    // Ventas por día (últimos N días según rango)
+    const byDay = {};
+    orders.forEach(o=>{
+      const k = new Date(o.ts).toLocaleDateString();
+      byDay[k] = (byDay[k]||0) + o.total;
+    });
+    const serie = Object.entries(byDay).sort((a,b)=> new Date(a[0]) - new Date(b[0])).map(x=>x[1]);
+    document.getElementById('sparkDia').textContent = sparkline(serie);
+
+    // Platillos más vendidos
+    const qtyByItem = {};
+    orders.forEach(o=> o.items.forEach(i=>{ qtyByItem[i.name] = (qtyByItem[i.name]||0) + i.qty; }));
+    const top = Object.entries(qtyByItem).sort((a,b)=> b[1]-a[1]).slice(0,8);
+    document.getElementById('topPlatillos').innerHTML = top.map(([name,qty])=>{
+      const bar = '<div style="background:#f39c12;height:12px;width:'+ (Math.min(100, qty*5)) +'px"></div>';
+      return `<div style="display:flex;align-items:center;gap:8px"><span style="min-width:200px">${name}</span>${bar}<span>${qty}</span></div>`
+    }).join('') || '<div>No hay datos</div>';
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ensure();
+    document.querySelectorAll('[data-range]').forEach(b=> b.addEventListener('click', ()=>{ RANGE=b.dataset.range; render(); }));
+    render();
+    addEventListener('orders:changed', render);
+  });
+  </script>
+</body>
+</html>

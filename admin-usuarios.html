@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Gestión de Usuarios (Admin) · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 12px">Gestión de Usuarios</h2>
+
+    <div class="card" style="margin-bottom:12px">
+      <form id="userForm" style="display:grid;grid-template-columns:1.2fr 1.3fr 1fr 0.8fr auto;gap:8px;align-items:end">
+        <input type="hidden" name="id" id="id">
+        <div>
+          <label>Nombre completo</label>
+          <input class="input" name="name" required>
+        </div>
+        <div>
+          <label>Correo</label>
+          <input class="input" name="email" type="email" required>
+        </div>
+        <div>
+          <label>Teléfono</label>
+          <input class="input" name="phone" pattern="[0-9]{10}" placeholder="0000000000">
+        </div>
+        <div>
+          <label>Rol</label>
+          <select class="input" name="role" required>
+            <option value="user">Cliente</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn" type="submit" id="saveBtn">Guardar</button>
+          <button class="btn secondary" type="button" id="clearBtn">Limpiar</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+        <input id="search" class="input" style="max-width:260px" placeholder="Buscar por nombre o correo...">
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th class="actions">Acciones</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-usuarios.html'); } }
+
+  function render(){
+    const tbody = document.getElementById('tbody');
+    const q = document.getElementById('search').value.toLowerCase();
+    const users = $app.getUsers().filter(u => (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q));
+
+    tbody.innerHTML = users.map(u=>`
+      <tr>
+        <td>${u.id}</td>
+        <td>${u.name}</td>
+        <td>${u.email}</td>
+        <td>${u.phone||''}</td>
+        <td>${u.role==='admin' ? 'Administrador' : 'Cliente'}</td>
+        <td class="actions">
+          <button class="btn" data-edit="${u.id}">Editar</button>
+          <button class="btn danger" data-del="${u.id}">Eliminar</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=>{
+      const u = $app.getUsers().find(x=>x.id===Number(b.dataset.edit));
+      document.getElementById('id').value = u.id;
+      const f = document.getElementById('userForm');
+      f.name.value = u.name; f.email.value = u.email; f.phone.value = u.phone||''; f.role.value = u.role;
+      document.getElementById('saveBtn').textContent = 'Actualizar';
+    }));
+
+    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
+      if(!confirm('¿Eliminar usuario?')) return;
+      const list = $app.getUsers().filter(x=>x.id!==Number(b.dataset.del));
+      $app.saveUsers(list); render();
+    }));
+  }
+
+  function clearForm(){
+    const f = document.getElementById('userForm'); f.reset(); document.getElementById('id').value='';
+    document.getElementById('saveBtn').textContent = 'Guardar';
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ensure();
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('clearBtn').addEventListener('click', clearForm);
+
+    document.getElementById('userForm').addEventListener('submit', (e)=>{
+      e.preventDefault();
+      const f = e.target; const fd = new FormData(f);
+      const id = Number(fd.get('id')||0);
+      const list = $app.getUsers();
+      if(id){
+        const u = list.find(x=>x.id===id); if(!u) return;
+        Object.assign(u, {name:fd.get('name'), email:fd.get('email'), phone:fd.get('phone'), role:fd.get('role')});
+      }else{
+        const next = (list[list.length-1]?.id||0)+1;
+        list.push({ id:next, name:fd.get('name'), email:fd.get('email'), phone:fd.get('phone'), role:fd.get('role') });
+      }
+      $app.saveUsers(list);
+      clearForm();
+      render();
+    });
+
+    render();
+    addEventListener('users:changed', render);
+  });
+  </script>
+</body>
+</html>
