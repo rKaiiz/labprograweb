@@ -16,6 +16,7 @@ Primer entrega: pantallas generales (usuarios y admin comparten navegación) sig
 - `admin-platillos.html` – Gestión de platillos con disponibilidad y alta
 - `admin-pedidos.html` – Gestión de pedidos generados en checkout
 - `admin-resenas.html` – Moderación de reseñas (aprobar/rechazar)
+- `admin-reservaciones.html` – Gestión de reservaciones (listar/filtrar por fecha/estado, cambiar estado y eliminar)
 - `admin-usuarios.html` – CRUD de usuarios demo (nombre, correo, teléfono y rol)
 - `admin-reporte.html` – KPIs y listados simples por periodo (usa pedidos locales)
 - `admin-aboutus.html` – Editor del contenido de “Acerca de nosotros”
@@ -23,7 +24,7 @@ Primer entrega: pantallas generales (usuarios y admin comparten navegación) sig
 - `assets/js/data.js` – Datos de ejemplo (categorías y productos)
 - `assets/js/main.js` – Navegación lateral, cabecera y lógica compartida (carrito en localStorage)
 
-Todo es HTML/CSS/JS estático, sin backend. El estado (carrito y reseñas) se guarda en `localStorage` del navegador.
+Todo es HTML/CSS/JS estático, sin backend. Varios estados (carrito, pedidos, reseñas, reservaciones, usuarios y about) se guardan en `localStorage` del navegador.
 
 ## Cómo ejecutar localmente
 
@@ -37,8 +38,13 @@ Recomendado (para rutas relativas correctas y auto‑recarga): usa la extensión
 2. Abrir `Carritos/pedidos` para ver, ajustar cantidades y total.
 3. En `Reseñas` puedes enviar una reseña (se guarda localmente).
 4. `Contacto` envía un mensaje de prueba (solo muestra un aviso y resetea el formulario).
-5. `Reservar una mesa` guarda reservas de ejemplo en localStorage.
-6. Panel de administración: accede a platillos, pedidos, reseñas, usuarios, reportes y edición de “Acerca de nosotros”.
+5. `Reservar una mesa` guarda reservas de ejemplo en localStorage y permite consultar el estado por teléfono (pendiente/confirmada/cancelada).
+6. Panel de administración: accede a platillos, pedidos, reseñas, reservaciones, usuarios, reportes y edición de “Acerca de nosotros”.
+
+### Reservaciones
+
+- Cliente (`reservar.html`): al enviar el formulario se crea una reservación con `id` incremental y `status: "pendiente"` en la clave `lmd_reservas`. Debajo del formulario puedes ingresar tu teléfono para ver el listado y el estado de tus reservaciones.
+- Admin (`admin-reservaciones.html`): listado con filtros por nombre, fecha y estado. Permite cambiar estado a `pendiente`/`confirmada`/`cancelada` o eliminar. Si existen reservaciones antiguas sin `id` o `status`, la pantalla de admin las migra automáticamente.
 
 ## Notas y próximos pasos
 
