@@ -46,23 +46,74 @@
         </div>
       </form>
     </div>
+
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+        <strong>Consultar estado de tus reservaciones</strong>
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+          <label for="findPhone">Teléfono</label>
+          <input id="findPhone" class="input" style="max-width:200px" placeholder="0000000000" pattern="[0-9]{10}">
+        </div>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Folio</th><th>Fecha</th><th>Hora</th><th>Personas</th><th>Estado</th></tr>
+        </thead>
+        <tbody id="myReservations"></tbody>
+      </table>
+    </div>
   </main>
 
   <script>
   const KEY = 'lmd_reservas';
   function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return [] } }
-  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); }
+  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); dispatchEvent(new CustomEvent('reservas:changed')); }
+  function nextId(list){ return (list[list.length-1]?.id || 0) + 1; }
+  function statusBadge(status){
+    const s = (status||'pendiente');
+    const bg = s==='confirmada' ? 'background: var(--ok); color: #fff' : s==='cancelada' ? 'background: var(--danger); color: #fff' : 'background:#ffcc80;color:#111';
+    const label = s.charAt(0).toUpperCase()+s.slice(1);
+    return `<span class="badge" style="${bg}">${label}</span>`;
+  }
+
+  function renderMyReservations(){
+    const phone = (document.getElementById('findPhone').value||'').trim();
+    const tbody = document.getElementById('myReservations');
+    if(!phone){ tbody.innerHTML = `<tr><td colspan="5">Ingresa tu teléfono para consultar tus reservaciones.</td></tr>`; return; }
+    const list = load().filter(r => (r.telefono||'')===phone)
+      .sort((a,b)=> (new Date(`${b.fecha}T${b.hora||'00:00'}`)) - (new Date(`${a.fecha}T${a.hora||'00:00'}`)));
+    if(list.length===0){ tbody.innerHTML = `<tr><td colspan="5">No se encontraron reservaciones para ese teléfono.</td></tr>`; return; }
+    tbody.innerHTML = list.map(r=>`
+      <tr>
+        <td>#${r.id ?? '-'}</td>
+        <td>${r.fecha||''}</td>
+        <td>${(r.hora||'').slice(0,5)}</td>
+        <td>${r.personas||''}</td>
+        <td>${statusBadge(r.status)}</td>
+      </tr>
+    `).join('');
+  }
   document.addEventListener('DOMContentLoaded', ()=>{
     const form = document.getElementById('resForm');
+    // Prefill phone if logged in and has phone
+    try{ const u = window.$app?.getUser?.(); if(u?.phone){ form.telefono.value = u.phone; document.getElementById('findPhone').value = u.phone; } }catch{}
     form.addEventListener('submit', (e)=>{
       e.preventDefault();
       const fd = new FormData(form);
       const item = Object.fromEntries(fd.entries());
-      item.ts = Date.now();
-      const list = load(); list.push(item); save(list);
-      alert('¡Reserva registrada! Nos pondremos en contacto para confirmarla.');
+      const list = load();
+      const id = nextId(list);
+      const withDefaults = { id, status:'pendiente', ts: Date.now(), ...item };
+      list.push(withDefaults); save(list);
+      alert('¡Reserva registrada! Estado actual: Pendiente. Te confirmaremos a la brevedad.');
       form.reset();
+      // Keep phone in the finder to see the new reservation
+      document.getElementById('findPhone').value = (withDefaults.telefono||'');
+      renderMyReservations();
     })
+    document.getElementById('findPhone').addEventListener('input', renderMyReservations);
+    addEventListener('reservas:changed', renderMyReservations);
+    renderMyReservations();
   })
   </script>
 </body>

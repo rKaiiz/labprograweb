@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Gestión de Reservaciones (Admin) · La Media Docena</title>
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+    <h2 style="text-align:center;margin:0 0 12px">Gestión de Reservaciones</h2>
+
+    <div class="card">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+        <input id="search" class="input" style="max-width:260px" placeholder="Buscar por nombre o teléfono...">
+        <label style="margin-left:auto">Fecha</label>
+        <input id="date" type="date" class="input" style="max-width:180px">
+        <label>Estado</label>
+        <select id="filter" class="input" style="max-width:180px">
+          <option value="all">Todos</option>
+          <option value="pendiente">Pendiente</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Folio</th><th>Nombre</th><th>Teléfono</th><th>Personas</th><th>Fecha</th><th>Hora</th><th>Estado</th><th class="actions">Acciones</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+  const KEY='lmd_reservas';
+  function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return []} }
+  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); dispatchEvent(new CustomEvent('reservas:changed')); }
+
+  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-reservaciones.html'); } }
+
+  function migrate(){
+    const list = load();
+    let changed = false;
+    // Ensure numeric incremental IDs
+    let nextId = list.reduce((m,r)=> Math.max(m, Number(r.id)||0), 0) + 1;
+    for(const r of list){
+      if(!('id' in r) || !Number(r.id)) { r.id = nextId++; changed = true; }
+      if(!('status' in r)) { r.status = 'pendiente'; changed = true; }
+    }
+    if(changed) save(list);
+  }
+
+  function byDateTimeAsc(a,b){
+    const da = new Date(`${a.fecha||''}T${(a.hora||'00:00').padStart(5,'0')}:00`);
+    const db = new Date(`${b.fecha||''}T${(b.hora||'00:00').padStart(5,'0')}:00`);
+    return da - db;
+  }
+
+  function render(){
+    const q = (document.getElementById('search').value||'').toLowerCase();
+    const f = document.getElementById('filter').value;
+    const d = document.getElementById('date').value; // YYYY-MM-DD or ''
+    const tbody = document.getElementById('tbody');
+    let list = load();
+
+    list = list
+      .filter(r => (f==='all' || (r.status||'pendiente')===f))
+      .filter(r => (!d || (r.fecha===d)))
+      .filter(r => (r.nombre||'').toLowerCase().includes(q) || (r.telefono||'').toLowerCase().includes(q))
+      .sort(byDateTimeAsc);
+
+    if(list.length===0){ tbody.innerHTML = `<tr><td colspan="8">Sin resultados</td></tr>`; return; }
+
+    tbody.innerHTML = list.map(r=>`
+      <tr>
+        <td>#${r.id}</td>
+        <td>${r.nombre}</td>
+        <td>${r.telefono||''}</td>
+        <td>${r.personas||''}</td>
+        <td>${r.fecha||''}</td>
+        <td>${(r.hora||'').slice(0,5)}</td>
+        <td>
+          <select data-status="${r.id}" class="input" style="padding:6px 10px">
+            ${['pendiente','confirmada','cancelada'].map(s=>`<option ${s=== (r.status||'pendiente') ? 'selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td class="actions">
+          <button class="btn danger" data-del="${r.id}">Eliminar</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
+      if(!confirm('¿Eliminar reservación?')) return;
+      const list = load().filter(x=>x.id!==Number(b.dataset.del));
+      save(list); render();
+    }));
+
+    tbody.querySelectorAll('[data-status]').forEach(sel=> sel.addEventListener('change', ()=>{
+      const id = Number(sel.dataset.status);
+      const list = load();
+      const it = list.find(x=>x.id===id);
+      if(it){ it.status = sel.value; save(list); }
+    }));
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ensure();
+    migrate();
+    document.getElementById('search').addEventListener('input', render);
+    document.getElementById('filter').addEventListener('change', render);
+    document.getElementById('date').addEventListener('change', render);
+    render();
+  });
+  </script>
+</body>
+</html>
