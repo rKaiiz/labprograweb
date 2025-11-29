@@ -3,102 +3,463 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Reportes (Admin) · La Media Docena</title>
+  <title>Reporte general · La Media Docena</title>
+
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="admin">
-  <main class="container">
-    <h2 style="text-align:center;margin:0 0 12px">Reportes</h2>
+<main class="container">
 
-    <div class="card" style="margin-bottom:12px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <strong>Filtro por periodo:</strong>
-        <button class="btn" data-range="today">Hoy</button>
-        <button class="btn" data-range="last7">Últimos 7 días</button>
-        <button class="btn" data-range="month">Este mes</button>
-        <button class="btn secondary" data-range="all">Todos</button>
+  <!-- Encabezado -->
+  <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div>
+      <h1 style="margin:0">Reporte general del restaurante</h1>
+      <p style="margin:4px 0 0;font-size:13px;color:#555;max-width:680px">
+        Panel de resumen para administración y staff. Aquí puedes ver de forma rápida el
+        estado de los pedidos, reservaciones y reseñas de clientes, así como algunos
+        indicadores de ingresos.
+      </p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px">
+      <span id="reporte-user-label" style="color:#374151">Sesión: &mdash;</span>
+      <a href="admin.html" class="btn secondary" style="font-size:12px;padding:4px 10px">← Volver al panel</a>
+    </div>
+  </header>
+
+  <!-- KPIs principales -->
+  <section class="card" style="margin-bottom:16px">
+    <h2 style="margin-top:0;font-size:15px">Indicadores generales</h2>
+    <p style="margin:0 0 10px;font-size:12px;color:#6b7280">
+      Resumen rápido de la actividad del restaurante con base en los datos registrados.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;font-size:13px">
+      <!-- Pedidos totales -->
+      <div style="padding:10px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe">
+        <div style="font-size:11px;text-transform:uppercase;color:#1d4ed8;letter-spacing:.04em">Pedidos totales</div>
+        <div id="kpi-pedidos-total" style="font-size:20px;font-weight:600">0</div>
+        <div id="kpi-ingresos-total" style="font-size:12px;color:#1f2937;margin-top:2px">Ingresos: $0.00</div>
       </div>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:12px">
-        <div class="card"><div>VENTAS TOTALES</div><h3 id="totalVentas">$0</h3></div>
-        <div class="card"><div>PEDIDOS COMPLETADOS</div><h3 id="pedidosCompletados">0</h3></div>
-        <div class="card"><div>TICKET PROMEDIO</div><h3 id="ticketProm">$0</h3></div>
+
+      <!-- Pedidos de hoy -->
+      <div style="padding:10px;border-radius:10px;background:#ecfdf3;border:1px solid #bbf7d0">
+        <div style="font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:.04em">Actividad de hoy</div>
+        <div id="kpi-pedidos-hoy" style="font-size:20px;font-weight:600">0</div>
+        <div id="kpi-ingresos-hoy" style="font-size:12px;color:#166534;margin-top:2px">Ingresos de hoy: $0.00</div>
       </div>
-      <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:12px">
-        <div class="card">
-          <strong>Ventas por Día</strong>
-          <div id="sparkDia" style="font-family:monospace;white-space:pre"></div>
+
+      <!-- Reservaciones -->
+      <div style="padding:10px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
+        <div style="font-size:11px;text-transform:uppercase;color:#854d0e;letter-spacing:.04em">Reservaciones</div>
+        <div id="kpi-reservas-hoy" style="font-size:20px;font-weight:600">0</div>
+        <div id="kpi-reservas-pendientes" style="font-size:12px;color:#854d0e;margin-top:2px">
+          Pendientes: 0
         </div>
-        <div class="card">
-          <strong>Platillos más vendidos</strong>
-          <div id="topPlatillos"></div>
+      </div>
+
+      <!-- Reseñas -->
+      <div style="padding:10px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe">
+        <div style="font-size:11px;text-transform:uppercase;color:#4f46e5;letter-spacing:.04em">Reseñas</div>
+        <div id="kpi-resenas-total" style="font-size:20px;font-weight:600">0</div>
+        <div id="kpi-resenas-extra" style="font-size:12px;color:#4f46e5;margin-top:2px">
+          Pendientes: 0 · Promedio: 0.0
         </div>
       </div>
     </div>
-  </main>
+  </section>
 
-  <script>
-  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-reporte.html'); } }
+  <!-- Fila: Reservaciones del día + Reseñas recientes -->
+  <section style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:flex-start;margin-bottom:16px">
+    <!-- Reservas de hoy -->
+    <article class="card">
+      <h2 style="margin-top:0;font-size:15px">Reservaciones de hoy</h2>
+      <p style="margin:0 0 8px;font-size:12px;color:#6b7280">
+        Listado de reservaciones programadas para el día de hoy.
+      </p>
+      <div style="overflow-x:auto">
+        <table class="table">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Teléfono</th>
+            <th>Personas</th>
+            <th>Hora</th>
+            <th>Estado</th>
+          </tr>
+          </thead>
+          <tbody id="tblReservasHoy">
+          <tr><td colspan="6" style="text-align:center;font-size:13px;color:#6b7280">
+            Cargando reservaciones de hoy...
+          </td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
 
-  function inRange(ts, range){
-    const d = new Date(ts); const now = new Date();
-    if(range==='today'){
-      const s = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      return ts >= s;
-    }
-    if(range==='last7'){
-      const s = now.getTime() - 7*24*60*60*1000; return ts >= s;
-    }
-    if(range==='month'){
-      const s = new Date(now.getFullYear(), now.getMonth(), 1).getTime(); return ts >= s;
-    }
-    return true; // all
+    <!-- Reseñas recientes -->
+    <article class="card">
+      <h2 style="margin-top:0;font-size:15px">Últimas reseñas</h2>
+      <p style="margin:0 0 8px;font-size:12px;color:#6b7280">
+        Muestra las reseñas más recientes registradas en el sistema.
+      </p>
+      <div style="overflow-y:auto;max-height:260px">
+        <ul id="listaResenasRecientes" style="list-style:none;padding-left:0;margin:0;font-size:13px">
+          <li style="font-size:13px;color:#6b7280">Cargando reseñas...</li>
+        </ul>
+      </div>
+    </article>
+  </section>
+
+  <!-- Últimos pedidos -->
+  <section class="card">
+    <h2 style="margin-top:0;font-size:15px">Últimos pedidos</h2>
+    <p style="margin:0 0 8px;font-size:12px;color:#6b7280">
+      Pedidos más recientes registrados en el sistema.
+    </p>
+    <div style="overflow-x:auto">
+      <table class="table">
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Fecha / hora</th>
+        </tr>
+        </thead>
+        <tbody id="tblPedidosRecientes">
+        <tr><td colspan="5" style="text-align:center;font-size:13px;color:#6b7280">
+          Cargando pedidos...
+        </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const API_BASE = "http://127.0.0.1:5000";
+
+  function formatCurrency(n){
+    return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(n || 0);
   }
 
-  function sparkline(values){
-    if(values.length===0) return '';
-    const min = Math.min(...values), max = Math.max(...values)||1;
-    const blocks = '▁▂▃▄▅▆▇█';
-    return values.map(v=> blocks[Math.round((v-min)/(max-min||1)*(blocks.length-1))]).join(' ');
+  function estadoPedidoBadge(estado){
+    const base = "display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid ";
+    switch(estado){
+      case "En Proceso":
+        return `<span style="${base}#f59e0b;background:#fffbeb;color:#92400e">En Proceso</span>`;
+      case "Listo":
+        return `<span style="${base}#10b981;background:#ecfdf3;color:#065f46">Listo</span>`;
+      case "Entregado":
+        return `<span style="${base}#6366f1;background:#eef2ff;color:#3730a3">Entregado</span>`;
+      case "Cancelado":
+        return `<span style="${base}#f97373;background:#fef2f2;color:#b91c1c">Cancelado</span>`;
+      default:
+        return `<span style="${base}#d1d5db;background:#f3f4f6;color:#374151">${estado||'—'}</span>`;
+    }
   }
 
-  let RANGE='last7';
-  function render(){
-    const orders = $app.listOrders().filter(o=> inRange(o.ts, RANGE));
-    const total = orders.reduce((a,o)=>a+o.total,0);
-    const count = orders.length;
-    const avg = count? total/count : 0;
+  function estadoReservaBadge(estado){
+    const base = "display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid ";
+    switch(estado){
+      case "pendiente":
+        return `<span style="${base}#facc15;background:#fefce8;color:#854d0e">Pendiente</span>`;
+      case "confirmada":
+        return `<span style="${base}#22c55e;background:#ecfdf3;color:#166534">Confirmada</span>`;
+      case "cancelada":
+        return `<span style="${base}#f97373;background:#fef2f2;color:#b91c1c">Cancelada</span>`;
+      default:
+        return `<span style="${base}#d1d5db;background:#f3f4f6;color:#374151">${estado||'—'}</span>`;
+    }
+  }
 
-    document.getElementById('totalVentas').textContent = $app.formatCurrency(total);
-    document.getElementById('pedidosCompletados').textContent = String(count);
-    document.getElementById('ticketProm').textContent = $app.formatCurrency(avg);
+  function isSameDay(dateA, dateB){
+    return dateA.getFullYear() === dateB.getFullYear() &&
+           dateA.getMonth() === dateB.getMonth() &&
+           dateA.getDate() === dateB.getDate();
+  }
 
-    // Ventas por día (últimos N días según rango)
-    const byDay = {};
-    orders.forEach(o=>{
-      const k = new Date(o.ts).toLocaleDateString();
-      byDay[k] = (byDay[k]||0) + o.total;
+  async function cargarDatosReporte(){
+    const hoy = new Date();
+
+    try{
+      const [respPedidos, respReservas, respResenas] = await Promise.all([
+        fetch(`${API_BASE}/api/pedidos`),
+        fetch(`${API_BASE}/api/reservaciones`),
+        fetch(`${API_BASE}/api/resenas`)
+      ]);
+
+      if(!respPedidos.ok) throw new Error("Error pedidos");
+      if(!respReservas.ok) throw new Error("Error reservaciones");
+      if(!respResenas.ok) throw new Error("Error reseñas");
+
+      const pedidos = await respPedidos.json();
+      const reservas = await respReservas.json();
+      const resenas = await respResenas.json();
+
+      actualizarKPIsPedidos(pedidos, hoy);
+      actualizarKPIsReservas(reservas, hoy);
+      actualizarKPIsResenas(resenas);
+
+      renderReservasHoy(reservas, hoy);
+      renderResenasRecientes(resenas);
+      renderPedidosRecientes(pedidos);
+    }catch(err){
+      console.error("Error cargarDatosReporte:", err);
+
+      // Dejar algo visible aunque haya error
+      document.getElementById("tblPedidosRecientes").innerHTML = `
+        <tr><td colspan="5" style="text-align:center;font-size:13px;color:#b91c1c">
+          No se pudo cargar la información. Verifica que el servidor Flask esté activo.
+        </td></tr>
+      `;
+      document.getElementById("tblReservasHoy").innerHTML = `
+        <tr><td colspan="6" style="text-align:center;font-size:13px;color:#b91c1c">
+          No se pudo cargar la información de reservaciones.
+        </td></tr>
+      `;
+      const lista = document.getElementById("listaResenasRecientes");
+      if(lista){
+        lista.innerHTML = `
+          <li style="font-size:13px;color:#b91c1c">
+            No se pudo cargar la información de reseñas.
+          </li>
+        `;
+      }
+    }
+  }
+
+  function actualizarKPIsPedidos(pedidos, hoy){
+    const totalPedidos = pedidos.length;
+    let ingresosTotales = 0;
+    let pedidosHoy = 0;
+    let ingresosHoy = 0;
+
+    pedidos.forEach(p => {
+      const total = Number(p.total) || 0;
+      ingresosTotales += total;
+
+      if(p.fecha_hora){
+        const fecha = new Date(p.fecha_hora);
+        if(isSameDay(fecha, hoy)){
+          pedidosHoy++;
+          ingresosHoy += total;
+        }
+      }
     });
-    const serie = Object.entries(byDay).sort((a,b)=> new Date(a[0]) - new Date(b[0])).map(x=>x[1]);
-    document.getElementById('sparkDia').textContent = sparkline(serie);
 
-    // Platillos más vendidos
-    const qtyByItem = {};
-    orders.forEach(o=> o.items.forEach(i=>{ qtyByItem[i.name] = (qtyByItem[i.name]||0) + i.qty; }));
-    const top = Object.entries(qtyByItem).sort((a,b)=> b[1]-a[1]).slice(0,8);
-    document.getElementById('topPlatillos').innerHTML = top.map(([name,qty])=>{
-      const bar = '<div style="background:#f39c12;height:12px;width:'+ (Math.min(100, qty*5)) +'px"></div>';
-      return `<div style="display:flex;align-items:center;gap:8px"><span style="min-width:200px">${name}</span>${bar}<span>${qty}</span></div>`
-    }).join('') || '<div>No hay datos</div>';
+    const elTotal = document.getElementById("kpi-pedidos-total");
+    const elIngTotal = document.getElementById("kpi-ingresos-total");
+    const elHoy = document.getElementById("kpi-pedidos-hoy");
+    const elIngHoy = document.getElementById("kpi-ingresos-hoy");
+
+    if(elTotal) elTotal.textContent = totalPedidos;
+    if(elIngTotal) elIngTotal.textContent = `Ingresos: ${formatCurrency(ingresosTotales)}`;
+    if(elHoy) elHoy.textContent = pedidosHoy;
+    if(elIngHoy) elIngHoy.textContent = `Ingresos de hoy: ${formatCurrency(ingresosHoy)}`;
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ensure();
-    document.querySelectorAll('[data-range]').forEach(b=> b.addEventListener('click', ()=>{ RANGE=b.dataset.range; render(); }));
-    render();
-    addEventListener('orders:changed', render);
+  function actualizarKPIsReservas(reservas, hoy){
+    let reservasHoy = 0;
+    let reservasPendientes = 0;
+
+    reservas.forEach(r => {
+      const fechaStr = r.fecha;
+      if(fechaStr){
+        const partes = fechaStr.split("-");
+        if(partes.length === 3){
+          const fecha = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
+          if(isSameDay(fecha, hoy)){
+            reservasHoy++;
+          }
+        }
+      }
+      if(r.estado === "pendiente") reservasPendientes++;
+    });
+
+    const elResHoy = document.getElementById("kpi-reservas-hoy");
+    const elResPend = document.getElementById("kpi-reservas-pendientes");
+    if(elResHoy) elResHoy.textContent = reservasHoy;
+    if(elResPend) elResPend.textContent = `Pendientes: ${reservasPendientes}`;
+  }
+
+  function actualizarKPIsResenas(resenas){
+    const total = resenas.length;
+    const pendientes = resenas.filter(r=>r.estado==="pendiente").length;
+
+    let suma = 0;
+    resenas.forEach(r => {
+      const c = Number(r.calificacion);
+      if(!Number.isNaN(c)) suma += c;
+    });
+    const promedio = total ? (suma/total).toFixed(1) : "0.0";
+
+    const elTotal = document.getElementById("kpi-resenas-total");
+    const elExtra = document.getElementById("kpi-resenas-extra");
+
+    if(elTotal) elTotal.textContent = total;
+    if(elExtra) elExtra.textContent = `Pendientes: ${pendientes} · Promedio: ${promedio}`;
+  }
+
+  function renderReservasHoy(reservas, hoy){
+    const tbody = document.getElementById("tblReservasHoy");
+    if(!tbody) return;
+
+    const reservasDia = reservas.filter(r => {
+      if(!r.fecha) return false;
+      const partes = r.fecha.split("-");
+      if(partes.length !== 3) return false;
+      const fecha = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
+      return isSameDay(fecha, hoy);
+    });
+
+    if(!reservasDia.length){
+      tbody.innerHTML = `
+        <tr><td colspan="6" style="text-align:center;font-size:13px;color:#6b7280">
+          No hay reservaciones para el día de hoy.
+        </td></tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    reservasDia.forEach(r => {
+      const tr = document.createElement("tr");
+      const horaTxt = (r.hora || "").toString().slice(0,5);
+      tr.innerHTML = `
+        <td>${r.id}</td>
+        <td>${r.nombre || ""}</td>
+        <td>${r.telefono || ""}</td>
+        <td>${r.personas || ""}</td>
+        <td>${horaTxt}</td>
+        <td>${estadoReservaBadge(r.estado)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderResenasRecientes(resenas){
+    const ul = document.getElementById("listaResenasRecientes");
+    if(!ul) return;
+
+    if(!resenas.length){
+      ul.innerHTML = `
+        <li style="font-size:13px;color:#6b7280">
+          No hay reseñas registradas aún.
+        </li>
+      `;
+      return;
+    }
+
+    // Ordenar por fecha ts descendente
+    const ordenadas = [...resenas].sort((a,b)=>{
+      if(!a.ts || !b.ts) return 0;
+      return new Date(b.ts) - new Date(a.ts);
+    }).slice(0,6);
+
+    ul.innerHTML = "";
+    ordenadas.forEach(r => {
+      const li = document.createElement("li");
+      li.style.marginBottom = "8px";
+
+      const fecha = r.ts ? new Date(r.ts) : null;
+      const fechaTxt = fecha
+        ? fecha.toLocaleDateString("es-MX",{day:"2-digit",month:"2-digit"}) +
+          " · " +
+          fecha.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})
+        : "";
+
+      const comentarioCorto = (r.comentario || "").length > 120
+        ? r.comentario.slice(0,117) + "..."
+        : (r.comentario || "");
+
+      li.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
+          <strong style="font-size:13px">${r.nombre || "Anónimo"}</strong>
+          <span style="font-size:11px;color:#6b7280">${fechaTxt}</span>
+        </div>
+        <div style="font-size:12px;color:#4b5563">
+          ⭐ ${r.calificacion || "-"} · <span style="color:#6b7280">${r.estado || ""}</span>
+        </div>
+        <div style="font-size:12px;color:#111827;margin-top:2px">
+          ${comentarioCorto || "<em>Sin comentario</em>"}
+        </div>
+      `;
+      ul.appendChild(li);
+    });
+  }
+
+  function renderPedidosRecientes(pedidos){
+    const tbody = document.getElementById("tblPedidosRecientes");
+    if(!tbody) return;
+
+    if(!pedidos.length){
+      tbody.innerHTML = `
+        <tr><td colspan="5" style="text-align:center;font-size:13px;color:#6b7280">
+          No hay pedidos registrados aún.
+        </td></tr>
+      `;
+      return;
+    }
+
+    const ordenados = [...pedidos].sort((a,b)=>{
+      if(!a.fecha_hora || !b.fecha_hora) return 0;
+      return new Date(b.fecha_hora) - new Date(a.fecha_hora);
+    }).slice(0,10);
+
+    tbody.innerHTML = "";
+    ordenados.forEach(p => {
+      const tr = document.createElement("tr");
+      const fecha = p.fecha_hora ? new Date(p.fecha_hora) : null;
+      const fechaTxt = fecha
+        ? fecha.toLocaleDateString("es-MX",{year:"numeric",month:"2-digit",day:"2-digit"}) +
+          " " +
+          fecha.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})
+        : (p.fecha_hora || "");
+
+      tr.innerHTML = `
+        <td>${p.id}</td>
+        <td>${p.cliente_nombre || ""}</td>
+        <td>${formatCurrency(p.total)}</td>
+        <td>${estadoPedidoBadge(p.estado)}</td>
+        <td style="font-size:12px;color:#374151">${fechaTxt}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Protección: staff o admin (panel compartido)
+    if(window.$app && $app.requireStaff){
+      $app.requireStaff();
+    }
+
+    // Info de sesión
+    const label = document.getElementById("reporte-user-label");
+    const u = window.$app ? $app.getUser() : null;
+    if(label){
+      if(!u){
+        label.textContent = "Sesión: sin iniciar sesión";
+        label.style.color = "#b91c1c";
+      }else{
+        const rolMostrar = u.role === "admin" ? "Administrador" :
+                           u.role === "staff" ? "Staff" : (u.role || "Usuario");
+        label.innerHTML = `
+          Sesión: <strong>${u.name || "Usuario"}</strong>
+          <span style="font-size:11px;color:#6b7280">(${rolMostrar})</span>
+        `;
+      }
+    }
+
+    cargarDatosReporte();
   });
-  </script>
+</script>
 </body>
 </html>

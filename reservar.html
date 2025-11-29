@@ -3,118 +3,383 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Reservar una Mesa · La Media Docena</title>
+  <title>Reservar mesa · La Media Docena</title>
+
+  <!-- Estilos globales -->
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="reservar">
   <main class="container">
-    <h2 style="text-align:center;margin:0 0 14px">Reservar una Mesa</h2>
-    <div class="card">
-      <form id="resForm">
-        <div class="form-row">
-          <div class="col">
-            <label>Nombre</label>
-            <input class="input" name="nombre" required placeholder="Juan">
+
+    <!-- Encabezado -->
+    <header style="margin-bottom:16px">
+      <h1 style="margin:0 0 4px">Reservar mesa</h1>
+      <p style="margin:0;font-size:13px;color:#555">
+        Aparta tu lugar en La Media Docena. Te pedimos algunos datos para confirmar tu reservación.
+      </p>
+    </header>
+
+    <!-- FORMULARIO DE RESERVACIÓN -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0">Nueva reservación</h2>
+
+      <form id="reservaForm" autocomplete="on">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+          <div>
+            <label for="res-nombre">Nombre completo</label>
+            <input
+              class="input"
+              id="res-nombre"
+              name="nombre"
+              required
+              placeholder="Ej. Juan Pérez"
+            >
           </div>
-          <div class="col">
-            <label>Número de Personas</label>
-            <input class="input" name="personas" type="number" min="1" max="20" required placeholder="2">
+
+          <div>
+            <label for="res-telefono">Teléfono de contacto</label>
+            <input
+              class="input"
+              id="res-telefono"
+              name="telefono"
+              required
+              placeholder="Ej. 8112345678"
+            >
+          </div>
+
+          <div>
+            <label for="res-personas">Número de personas</label>
+            <input
+              class="input"
+              id="res-personas"
+              name="personas"
+              type="number"
+              min="1"
+              max="20"
+              required
+              placeholder="Ej. 4"
+            >
+          </div>
+
+          <div>
+            <label for="res-fecha">Fecha</label>
+            <input
+              class="input"
+              id="res-fecha"
+              name="fecha"
+              type="date"
+              required
+            >
+          </div>
+
+          <div>
+            <label for="res-hora">Hora</label>
+            <input
+              class="input"
+              id="res-hora"
+              name="hora"
+              type="time"
+              required
+            >
           </div>
         </div>
-        <div class="form-row" style="margin-top:12px">
-          <div class="col">
-            <label>Teléfono</label>
-            <input class="input" name="telefono" required placeholder="0000000000" pattern="[0-9]{10}">
-          </div>
-          <div class="col">
-            <label>Fecha</label>
-            <input class="input" name="fecha" type="date" required>
-          </div>
-        </div>
-        <div class="form-row" style="margin-top:12px">
-          <div class="col">
-            <label>Hora</label>
-            <input class="input" name="hora" type="time" required>
-          </div>
-          <div class="col"></div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:16px;justify-content:space-between">
-          <a class="btn secondary" href="index.html">Inicio</a>
-          <button class="btn" type="submit">Confirmar Reservación</button>
+
+        <p id="reserva-msg" style="margin-top:10px;font-size:13px;color:#555;display:none"></p>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+          <button class="btn secondary" type="reset" id="btn-limpiar">
+            Limpiar
+          </button>
+          <button class="btn" type="submit">
+            Confirmar reservación
+          </button>
         </div>
       </form>
-    </div>
+    </section>
 
-    <div class="card" style="margin-top:16px">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
-        <strong>Consultar estado de tus reservaciones</strong>
-        <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-          <label for="findPhone">Teléfono</label>
-          <input id="findPhone" class="input" style="max-width:200px" placeholder="0000000000" pattern="[0-9]{10}">
+    <!-- CONSULTAR RESERVACIONES POR TELÉFONO -->
+    <section class="card">
+      <h2 style="margin-top:0">Consultar mis reservaciones</h2>
+      <p style="margin:0 0 8px;font-size:13px;color:#555">
+        Ingresa tu número de teléfono para ver las reservaciones asociadas.
+      </p>
+
+      <form id="buscarForm" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end">
+        <div style="flex:1 1 180px">
+          <label for="buscar-telefono">Teléfono</label>
+          <input
+            class="input"
+            id="buscar-telefono"
+            name="telefono"
+            placeholder="Ej. 8112345678"
+          >
         </div>
+        <button class="btn secondary" type="submit">
+          Buscar
+        </button>
+        <button class="btn secondary" type="button" id="btn-buscar-todo">
+          Ver todas (admin)
+        </button>
+      </form>
+
+      <div style="margin-top:10px;overflow-x:auto">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Nombre</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Teléfono</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Fecha</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Personas</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-reservas">
+            <tr>
+              <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Aún no has realizado una búsqueda.
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <table class="table">
-        <thead>
-          <tr><th>Folio</th><th>Fecha</th><th>Hora</th><th>Personas</th><th>Estado</th></tr>
-        </thead>
-        <tbody id="myReservations"></tbody>
-      </table>
-    </div>
+    </section>
+
   </main>
 
   <script>
-  const KEY = 'lmd_reservas';
-  function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'[]'); }catch{ return [] } }
-  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); dispatchEvent(new CustomEvent('reservas:changed')); }
-  function nextId(list){ return (list[list.length-1]?.id || 0) + 1; }
-  function statusBadge(status){
-    const s = (status||'pendiente');
-    const bg = s==='confirmada' ? 'background: var(--ok); color: #fff' : s==='cancelada' ? 'background: var(--danger); color: #fff' : 'background:#ffcc80;color:#111';
-    const label = s.charAt(0).toUpperCase()+s.slice(1);
-    return `<span class="badge" style="${bg}">${label}</span>`;
-  }
+    const API_BASE = "http://127.0.0.1:5000/api";
 
-  function renderMyReservations(){
-    const phone = (document.getElementById('findPhone').value||'').trim();
-    const tbody = document.getElementById('myReservations');
-    if(!phone){ tbody.innerHTML = `<tr><td colspan="5">Ingresa tu teléfono para consultar tus reservaciones.</td></tr>`; return; }
-    const list = load().filter(r => (r.telefono||'')===phone)
-      .sort((a,b)=> (new Date(`${b.fecha}T${b.hora||'00:00'}`)) - (new Date(`${a.fecha}T${a.hora||'00:00'}`)));
-    if(list.length===0){ tbody.innerHTML = `<tr><td colspan="5">No se encontraron reservaciones para ese teléfono.</td></tr>`; return; }
-    tbody.innerHTML = list.map(r=>`
-      <tr>
-        <td>#${r.id ?? '-'}</td>
-        <td>${r.fecha||''}</td>
-        <td>${(r.hora||'').slice(0,5)}</td>
-        <td>${r.personas||''}</td>
-        <td>${statusBadge(r.status)}</td>
-      </tr>
-    `).join('');
-  }
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const form = document.getElementById('resForm');
-    // Prefill phone if logged in and has phone
-    try{ const u = window.$app?.getUser?.(); if(u?.phone){ form.telefono.value = u.phone; document.getElementById('findPhone').value = u.phone; } }catch{}
-    form.addEventListener('submit', (e)=>{
+    function setHoyEnFecha() {
+      const inputFecha = document.getElementById("res-fecha");
+      if (!inputFecha) return;
+      const hoy = new Date();
+      const yyyy = hoy.getFullYear();
+      const mm = String(hoy.getMonth() + 1).padStart(2, "0");
+      const dd = String(hoy.getDate()).padStart(2, "0");
+      const hoyStr = `${yyyy}-${mm}-${dd}`;
+      inputFecha.value = hoyStr;
+      inputFecha.min = hoyStr; // no dejar reservar en días pasados
+    }
+
+    function mostrarMensajeReserva(texto, tipo = "info") {
+      const p = document.getElementById("reserva-msg");
+      if (!p) return;
+      p.style.display = "block";
+      p.textContent = texto;
+      if (tipo === "ok") {
+        p.style.color = "#1a7f37"; // verde
+      } else if (tipo === "error") {
+        p.style.color = "#b42318"; // rojo
+      } else {
+        p.style.color = "#555";
+      }
+    }
+
+    async function crearReservacion(e) {
       e.preventDefault();
-      const fd = new FormData(form);
-      const item = Object.fromEntries(fd.entries());
-      const list = load();
-      const id = nextId(list);
-      const withDefaults = { id, status:'pendiente', ts: Date.now(), ...item };
-      list.push(withDefaults); save(list);
-      alert('¡Reserva registrada! Estado actual: Pendiente. Te confirmaremos a la brevedad.');
-      form.reset();
-      // Keep phone in the finder to see the new reservation
-      document.getElementById('findPhone').value = (withDefaults.telefono||'');
-      renderMyReservations();
-    })
-    document.getElementById('findPhone').addEventListener('input', renderMyReservations);
-    addEventListener('reservas:changed', renderMyReservations);
-    renderMyReservations();
-  })
+      const form = e.target;
+
+      const nombre = document.getElementById("res-nombre").value.trim();
+      const telefono = document.getElementById("res-telefono").value.trim();
+      const personasStr = document.getElementById("res-personas").value.trim();
+      const fecha = document.getElementById("res-fecha").value;
+      const hora = document.getElementById("res-hora").value;
+
+      const personas = parseInt(personasStr || "0", 10);
+
+      if (!nombre || !telefono || !personas || !fecha || !hora) {
+        mostrarMensajeReserva("Por favor llena todos los campos.", "error");
+        return;
+      }
+
+      if (personas <= 0) {
+        mostrarMensajeReserva("El número de personas debe ser mayor a 0.", "error");
+        return;
+      }
+
+      try {
+        mostrarMensajeReserva("Enviando tu reservación...", "info");
+
+        const res = await fetch(`${API_BASE}/reservaciones`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, telefono, personas, fecha, hora })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.ok === false) {
+          console.error("Error al reservar:", data);
+          mostrarMensajeReserva(data.error || "Ocurrió un error al registrar tu reservación.", "error");
+          return;
+        }
+
+        mostrarMensajeReserva("¡Listo! Tu reservación ha sido registrada.", "ok");
+        form.reset();
+        setHoyEnFecha();
+        // Si el usuario consulta sus reservas después, usamos el teléfono actual
+        const buscarTelInput = document.getElementById("buscar-telefono");
+        if (buscarTelInput && telefono) {
+          buscarTelInput.value = telefono;
+          buscarReservasPorTelefono(telefono);
+        }
+      } catch (err) {
+        console.error("Error al conectar con el servidor:", err);
+        mostrarMensajeReserva("No se pudo conectar con el servidor. Verifica tu conexión o inténtalo más tarde.", "error");
+      }
+    }
+
+    function renderTablaReservas(lista) {
+      const tbody = document.getElementById("tabla-reservas");
+      tbody.innerHTML = "";
+
+      if (!lista.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+              No se encontraron reservaciones.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      lista.forEach(r => {
+        const tr = document.createElement("tr");
+        const fecha = r.fecha || "";
+        const hora = r.hora || "";
+        const nombre = r.nombre || "Cliente";
+        const tel = r.telefono || "";
+        const personas = r.personas ?? "-";
+        const estado = r.estado || "pendiente";
+
+        tr.innerHTML = `
+          <td style="padding:4px;border-bottom:1px solid #eee">${nombre}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee">${tel}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee">${fecha} ${hora}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">${personas}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <span style="font-size:11px;padding:2px 6px;border-radius:999px;border:1px solid #ddd">
+              ${estado}
+            </span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function buscarReservasPorTelefono(telefono) {
+      if (!telefono) {
+        renderTablaReservas([]);
+        return;
+      }
+      const tbody = document.getElementById("tabla-reservas");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+            Buscando reservaciones...
+          </td>
+        </tr>
+      `;
+      try {
+        const url = new URL(`${API_BASE}/reservaciones`);
+        url.searchParams.set("telefono", telefono);
+        const res = await fetch(url.toString());
+        const data = await res.json().catch(() => []);
+        renderTablaReservas(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error al buscar reservaciones:", err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+              No se pudo consultar la información. Inténtalo de nuevo.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    async function buscarTodasReservas() {
+      const tbody = document.getElementById("tabla-reservas");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+            Cargando todas las reservaciones...
+          </td>
+        </tr>
+      `;
+      try {
+        const res = await fetch(`${API_BASE}/reservaciones`);
+        const data = await res.json().catch(() => []);
+        renderTablaReservas(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error al cargar todas las reservaciones:", err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+              No se pudo consultar la información. Inténtalo de nuevo.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Inicializar fecha mínima = hoy
+      setHoyEnFecha();
+
+      const reservaForm = document.getElementById("reservaForm");
+      const buscarForm = document.getElementById("buscarForm");
+      const btnBuscarTodo = document.getElementById("btn-buscar-todo");
+      const btnLimpiar = document.getElementById("btn-limpiar");
+
+      if (reservaForm) {
+        reservaForm.addEventListener("submit", crearReservacion);
+      }
+
+      if (btnLimpiar) {
+        btnLimpiar.addEventListener("click", () => {
+          mostrarMensajeReserva("", "info");
+          document.getElementById("reserva-msg").style.display = "none";
+          setHoyEnFecha();
+        });
+      }
+
+      if (buscarForm) {
+        buscarForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          const tel = document.getElementById("buscar-telefono").value.trim();
+          if (!tel) {
+            renderTablaReservas([]);
+            const tbody = document.getElementById("tabla-reservas");
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                  Ingresa un número de teléfono para buscar.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+          buscarReservasPorTelefono(tel);
+        });
+      }
+
+      if (btnBuscarTodo) {
+        btnBuscarTodo.addEventListener("click", () => {
+          // Solo permitir ver todas si es admin
+          if (window.$app && typeof $app.isAdmin === "function" && !$app.isAdmin()) {
+            alert("Solo el administrador puede ver todas las reservaciones.");
+            return;
+          }
+          buscarTodasReservas();
+        });
+      }
+    });
   </script>
 </body>
 </html>

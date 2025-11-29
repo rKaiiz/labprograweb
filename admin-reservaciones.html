@@ -3,117 +3,236 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Gestión de Reservaciones (Admin) · La Media Docena</title>
+  <title>Reservaciones · La Media Docena</title>
+
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="admin">
-  <main class="container">
-    <h2 style="text-align:center;margin:0 0 12px">Gestión de Reservaciones</h2>
+<main class="container">
 
-    <div class="card">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-        <input id="search" class="input" style="max-width:260px" placeholder="Buscar por nombre o teléfono...">
-        <label style="margin-left:auto">Fecha</label>
-        <input id="date" type="date" class="input" style="max-width:180px">
-        <label>Estado</label>
-        <select id="filter" class="input" style="max-width:180px">
-          <option value="all">Todos</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="confirmada">Confirmada</option>
-          <option value="cancelada">Cancelada</option>
-        </select>
+  <!-- Encabezado -->
+  <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div>
+      <h1 style="margin:0">Gestión de reservaciones</h1>
+      <p style="margin:4px 0 0;font-size:13px;color:#555;max-width:600px">
+        Revisa las reservaciones realizadas por los clientes, confirma su asistencia o
+        cancela cuando sea necesario. Este módulo puede ser utilizado tanto por administración
+        como por el personal de staff.
+      </p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px">
+      <span id="reservas-user-label" style="color:#374151">Sesión: &mdash;</span>
+      <a href="admin.html" class="btn secondary" style="font-size:12px;padding:4px 10px">← Volver al panel</a>
+    </div>
+  </header>
+
+  <!-- Resumen -->
+  <section class="card" style="margin-bottom:16px">
+    <h2 style="margin-top:0;font-size:15px">Resumen de reservaciones</h2>
+    <p style="margin:0 0 10px;font-size:12px;color:#6b7280">
+      Vista general del estado de las reservaciones registradas.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;font-size:13px">
+      <div style="padding:8px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe">
+        <div style="font-size:11px;text-transform:uppercase;color:#1d4ed8;letter-spacing:.04em">Totales</div>
+        <div id="sum-res-total" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#1d4ed8">Reservaciones registradas</div>
       </div>
+      <div style="padding:8px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
+        <div style="font-size:11px;text-transform:uppercase;color:#854d0e;letter-spacing:.04em">Pendientes</div>
+        <div id="sum-res-pendiente" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#854d0e">Por confirmar</div>
+      </div>
+      <div style="padding:8px;border-radius:10px;background:#ecfdf3;border:1px solid #bbf7d0">
+        <div style="font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:.04em">Confirmadas</div>
+        <div id="sum-res-confirmada" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#166534">Reservas activas</div>
+      </div>
+      <div style="padding:8px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca">
+        <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;letter-spacing:.04em">Canceladas</div>
+        <div id="sum-res-cancelada" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#b91c1c">Reservas anuladas</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Listado -->
+  <section class="card">
+    <h2 style="margin-top:0;font-size:15px">Listado de reservaciones</h2>
+
+    <div style="overflow-x:auto;margin-top:8px">
       <table class="table">
         <thead>
-          <tr><th>Folio</th><th>Nombre</th><th>Teléfono</th><th>Personas</th><th>Fecha</th><th>Hora</th><th>Estado</th><th class="actions">Acciones</th></tr>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Teléfono</th>
+          <th>Personas</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Estado</th>
+          <th style="width:210px">Acciones</th>
+        </tr>
         </thead>
-        <tbody id="tbody"></tbody>
+        <tbody id="tblReservasBody">
+        <tr><td colspan="8" style="text-align:center;font-size:13px;color:#6b7280">Cargando reservaciones...</td></tr>
+        </tbody>
       </table>
     </div>
-  </main>
+  </section>
 
-  <script>
-  const KEY='lmd_reservas';
-  function load(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]');}catch{return []} }
-  function save(list){ localStorage.setItem(KEY, JSON.stringify(list)); dispatchEvent(new CustomEvent('reservas:changed')); }
+</main>
 
-  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-reservaciones.html'); } }
+<script>
+  const API_BASE = "http://127.0.0.1:5000";
 
-  function migrate(){
-    const list = load();
-    let changed = false;
-    // Ensure numeric incremental IDs
-    let nextId = list.reduce((m,r)=> Math.max(m, Number(r.id)||0), 0) + 1;
-    for(const r of list){
-      if(!('id' in r) || !Number(r.id)) { r.id = nextId++; changed = true; }
-      if(!('status' in r)) { r.status = 'pendiente'; changed = true; }
+  function estadoReservaBadge(estado){
+    const base = "display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid ";
+    switch(estado){
+      case "pendiente":
+        return `<span style="${base}#facc15;background:#fefce8;color:#854d0e">Pendiente</span>`;
+      case "confirmada":
+        return `<span style="${base}#22c55e;background:#ecfdf3;color:#166534">Confirmada</span>`;
+      case "cancelada":
+        return `<span style="${base}#f97373;background:#fef2f2;color:#b91c1c">Cancelada</span>`;
+      default:
+        return `<span style="${base}#d1d5db;background:#f3f4f6;color:#374151">${estado||'—'}</span>`;
     }
-    if(changed) save(list);
   }
 
-  function byDateTimeAsc(a,b){
-    const da = new Date(`${a.fecha||''}T${(a.hora||'00:00').padStart(5,'0')}:00`);
-    const db = new Date(`${b.fecha||''}T${(b.hora||'00:00').padStart(5,'0')}:00`);
-    return da - db;
+  async function loadReservas(){
+    const tbody = document.getElementById("tblReservasBody");
+    if(!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;font-size:13px;color:#6b7280">
+      Cargando reservaciones...
+    </td></tr>`;
+
+    try{
+      const resp = await fetch(`${API_BASE}/api/reservaciones`);
+      if(!resp.ok) throw new Error("Error al consultar reservaciones");
+      const reservas = await resp.json();
+
+      renderResumenReservas(reservas);
+      renderTablaReservas(reservas);
+    }catch(err){
+      console.error("Error loadReservas:", err);
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;font-size:13px;color:#b91c1c">
+        No se pudieron cargar las reservaciones. Verifica que el servidor Flask esté activo.
+      </td></tr>`;
+      renderResumenReservas([]);
+    }
   }
 
-  function render(){
-    const q = (document.getElementById('search').value||'').toLowerCase();
-    const f = document.getElementById('filter').value;
-    const d = document.getElementById('date').value; // YYYY-MM-DD or ''
-    const tbody = document.getElementById('tbody');
-    let list = load();
+  function renderResumenReservas(reservas){
+    const total = reservas.length;
+    const pend = reservas.filter(r=>r.estado==="pendiente").length;
+    const conf = reservas.filter(r=>r.estado==="confirmada").length;
+    const canc = reservas.filter(r=>r.estado==="cancelada").length;
 
-    list = list
-      .filter(r => (f==='all' || (r.status||'pendiente')===f))
-      .filter(r => (!d || (r.fecha===d)))
-      .filter(r => (r.nombre||'').toLowerCase().includes(q) || (r.telefono||'').toLowerCase().includes(q))
-      .sort(byDateTimeAsc);
+    const q = id => document.getElementById(id);
+    if(q("sum-res-total")) q("sum-res-total").textContent = total;
+    if(q("sum-res-pendiente")) q("sum-res-pendiente").textContent = pend;
+    if(q("sum-res-confirmada")) q("sum-res-confirmada").textContent = conf;
+    if(q("sum-res-cancelada")) q("sum-res-cancelada").textContent = canc;
+  }
 
-    if(list.length===0){ tbody.innerHTML = `<tr><td colspan="8">Sin resultados</td></tr>`; return; }
+  function renderTablaReservas(reservas){
+    const tbody = document.getElementById("tblReservasBody");
+    if(!tbody) return;
 
-    tbody.innerHTML = list.map(r=>`
-      <tr>
-        <td>#${r.id}</td>
-        <td>${r.nombre}</td>
-        <td>${r.telefono||''}</td>
-        <td>${r.personas||''}</td>
-        <td>${r.fecha||''}</td>
-        <td>${(r.hora||'').slice(0,5)}</td>
+    if(!reservas.length){
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;font-size:13px;color:#6b7280">
+        No hay reservaciones registradas.
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    reservas.forEach(res=>{
+      const tr = document.createElement("tr");
+
+      // fecha viene como YYYY-MM-DD, hora como HH:MM:SS
+      const fechaTxt = res.fecha || "";
+      const horaTxt = (res.hora||"").toString().slice(0,5);
+
+      tr.innerHTML = `
+        <td>${res.id}</td>
+        <td>${res.nombre || ""}</td>
+        <td>${res.telefono || ""}</td>
+        <td>${res.personas || ""}</td>
+        <td>${fechaTxt}</td>
+        <td>${horaTxt}</td>
+        <td>${estadoReservaBadge(res.estado)}</td>
         <td>
-          <select data-status="${r.id}" class="input" style="padding:6px 10px">
-            ${['pendiente','confirmada','cancelada'].map(s=>`<option ${s=== (r.status||'pendiente') ? 'selected':''}>${s}</option>`).join('')}
-          </select>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            <button class="btn secondary btn-sm" data-estado="confirmada">Confirmar</button>
+            <button class="btn secondary btn-sm" data-estado="cancelada" style="background:#fee2e2;border-color:#fecaca;color:#b91c1c">
+              Cancelar
+            </button>
+          </div>
         </td>
-        <td class="actions">
-          <button class="btn danger" data-del="${r.id}">Eliminar</button>
-        </td>
-      </tr>`).join('');
+      `;
 
-    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
-      if(!confirm('¿Eliminar reservación?')) return;
-      const list = load().filter(x=>x.id!==Number(b.dataset.del));
-      save(list); render();
-    }));
+      const buttons = tr.querySelectorAll("button[data-estado]");
+      buttons.forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const nuevoEstado = btn.getAttribute("data-estado");
+          cambiarEstadoReserva(res.id, nuevoEstado);
+        });
+      });
 
-    tbody.querySelectorAll('[data-status]').forEach(sel=> sel.addEventListener('change', ()=>{
-      const id = Number(sel.dataset.status);
-      const list = load();
-      const it = list.find(x=>x.id===id);
-      if(it){ it.status = sel.value; save(list); }
-    }));
+      tbody.appendChild(tr);
+    });
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ensure();
-    migrate();
-    document.getElementById('search').addEventListener('input', render);
-    document.getElementById('filter').addEventListener('change', render);
-    document.getElementById('date').addEventListener('change', render);
-    render();
+  async function cambiarEstadoReserva(id, nuevoEstado){
+    if(!confirm(`¿Cambiar el estado de la reservación #${id} a "${nuevoEstado}"?`)) return;
+
+    try{
+      const resp = await fetch(`${API_BASE}/api/reservaciones/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      if(!resp.ok) throw new Error("Error al actualizar la reservación");
+      await loadReservas();
+    }catch(err){
+      console.error("Error cambiarEstadoReserva:", err);
+      alert("No se pudo actualizar la reservación. Revisa el servidor Flask.");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Protección: staff o admin
+    if(window.$app && $app.requireStaff){
+      $app.requireStaff();
+    }
+
+    // Mostrar info de sesión
+    const label = document.getElementById("reservas-user-label");
+    const u = window.$app ? $app.getUser() : null;
+    if(label){
+      if(!u){
+        label.textContent = "Sesión: sin iniciar sesión";
+        label.style.color = "#b91c1c";
+      }else{
+        const rolMostrar = u.role === "admin" ? "Administrador" :
+                           u.role === "staff" ? "Staff" : (u.role || "Usuario");
+        label.innerHTML = `
+          Sesión: <strong>${u.name || "Usuario"}</strong>
+          <span style="font-size:11px;color:#6b7280">(${rolMostrar})</span>
+        `;
+      }
+    }
+
+    loadReservas();
   });
-  </script>
+</script>
 </body>
 </html>

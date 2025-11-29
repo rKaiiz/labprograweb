@@ -4,77 +4,322 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Reseñas · La Media Docena</title>
+
+  <!-- Estilos globales -->
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="resenas">
   <main class="container">
-    <div class="card" style="margin-bottom:16px">
-      <form id="formReview">
-        <div class="form-row">
-          <div class="col">
-            <label>Nombre</label>
-            <input class="input" name="name" required placeholder="Tu nombre">
+
+    <!-- Encabezado -->
+    <header style="margin-bottom:16px">
+      <h1 style="margin:0 0 4px">Reseñas de nuestros clientes</h1>
+      <p style="margin:0;font-size:13px;color:#555">
+        Lee lo que dicen otras personas sobre La Media Docena y comparte tu experiencia con nosotros.
+      </p>
+    </header>
+
+    <!-- FORMULARIO NUEVA RESEÑA -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:16px">Escribe tu reseña</h2>
+      <p style="margin:0 0 8px;font-size:12px;color:#777">
+        Tu opinión nos ayuda a mejorar. La reseña se publicará una vez que sea revisada.
+      </p>
+
+      <form id="resenaForm" autocomplete="on">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+          <div>
+            <label for="resena-nombre">Nombre (opcional)</label>
+            <input
+              id="resena-nombre"
+              class="input"
+              name="nombre"
+              placeholder="Ej. Juan Pérez (o déjalo vacío para Anónimo)"
+            >
           </div>
-          <div class="col">
-            <label>Calificación</label>
-            <select name="rating" class="input" required>
-              <option value="5">5 - Excelente</option>
-              <option value="4">4 - Muy bueno</option>
-              <option value="3">3 - Bueno</option>
-              <option value="2">2 - Regular</option>
-              <option value="1">1 - Malo</option>
+
+          <div>
+            <label for="resena-calificacion">Calificación</label>
+            <select id="resena-calificacion" name="calificacion" class="input" required>
+              <option value="">Selecciona una opción</option>
+              <option value="5">★★★★★ - Excelente</option>
+              <option value="4">★★★★☆ - Muy bueno</option>
+              <option value="3">★★★☆☆ - Bueno</option>
+              <option value="2">★★☆☆☆ - Regular</option>
+              <option value="1">★☆☆☆☆ - Malo</option>
             </select>
           </div>
         </div>
-        <div class="col" style="margin-top:12px">
-          <label>Comentario</label>
-          <textarea class="input" name="comment" rows="4" required placeholder="Cuéntanos tu experiencia"></textarea>
+
+        <div style="margin-top:10px">
+          <label for="resena-comentario">Tu comentario</label>
+          <textarea
+            id="resena-comentario"
+            name="comentario"
+            class="input"
+            rows="3"
+            required
+            placeholder="Cuéntanos qué te gustó, qué podríamos mejorar o tu experiencia en general."
+          ></textarea>
         </div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <button class="btn" type="submit">Enviar reseña</button>
-          <button class="btn secondary" type="reset">Limpiar</button>
+
+        <p id="resena-msg" style="margin-top:10px;font-size:13px;display:none"></p>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+          <button class="btn secondary" type="reset" id="btn-limpiar-resena">
+            Limpiar
+          </button>
+          <button class="btn" type="submit">
+            Enviar reseña
+          </button>
         </div>
       </form>
-    </div>
+    </section>
 
-    <section id="reviews" class="grid"></section>
+    <!-- RESUMEN Y LISTADO DE RESEÑAS -->
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <div>
+          <h2 style="margin:0;font-size:16px">Reseñas publicadas</h2>
+          <p id="resenas-resumen" style="margin:2px 0 0;font-size:12px;color:#777">
+            Cargando reseñas...
+          </p>
+        </div>
+        <div id="resenas-promedio" style="font-size:13px;color:#555;text-align:right">
+          <!-- promedio y estrellas -->
+        </div>
+      </div>
+
+      <div id="resenas-contenedor" style="max-height:360px;overflow:auto">
+        <ul id="resenas-lista" style="list-style:none;padding:0;margin:0;font-size:13px">
+          <li style="padding:6px 2px;font-size:12px;color:#777">
+            Cargando reseñas...
+          </li>
+        </ul>
+      </div>
+    </section>
+
   </main>
 
   <script>
-  const KEY = 'lmd_reviews';
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch { return [] } }
-  const save = (list) => localStorage.setItem(KEY, JSON.stringify(list));
+    const API_BASE = "http://127.0.0.1:5000/api";
 
-  function stars(n){ return '<span class="rating">' + '★'.repeat(n) + '<span style="color:#ccc">' + '☆'.repeat(5-n) + '</span></span>'; }
+    function estrellasTexto(calificacion){
+      const n = Math.max(0, Math.min(5, Number(calificacion || 0)));
+      const llenas = "★".repeat(n);
+      const vacias = "☆".repeat(5 - n);
+      return llenas + vacias;
+    }
 
-  function render(){
-    const wrap = document.getElementById('reviews');
-    const list = load().filter(r => (r.status ?? 'aprobada') === 'aprobada');
-    if(list.length===0){ wrap.innerHTML = '<div class="card">Aún no hay reseñas publicadas. ¡Sé la primera persona en opinar!</div>'; return; }
-    wrap.classList.add('cards');
-    wrap.innerHTML = list.map(r => `
-      <article class="review card">
-        <strong>${r.name}</strong> <span class="badge">${new Date(r.ts).toLocaleDateString()}</span><br>
-        ${stars(r.rating)}
-        <p>${r.comment}</p>
-      </article>`).join('');
-  }
+    function mostrarMensajeResena(texto, tipo = "info"){
+      const p = document.getElementById("resena-msg");
+      if(!p) return;
+      p.style.display = "block";
+      p.textContent = texto;
+      if(tipo === "ok"){
+        p.style.color = "#1a7f37";
+      } else if(tipo === "error"){
+        p.style.color = "#b42318";
+      } else {
+        p.style.color = "#555";
+      }
+    }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    render();
-    document.getElementById('formReview').addEventListener('submit', e => {
+    function limpiarMensajeResena(){
+      const p = document.getElementById("resena-msg");
+      if(p){
+        p.style.display = "none";
+        p.textContent = "";
+      }
+    }
+
+    async function enviarResena(e){
       e.preventDefault();
-      const fd = new FormData(e.target);
-      const list = load();
-      const item = { id: (list[0]?.id||0)+1, name: fd.get('name'), rating: Number(fd.get('rating')), comment: fd.get('comment'), ts: Date.now(), status: 'pendiente' };
-      list.unshift(item); save(list);
-      e.target.reset();
-      alert('¡Gracias! Tu reseña será visible cuando el administrador la apruebe.');
-      render();
+
+      const nombreInput = document.getElementById("resena-nombre");
+      const califSel = document.getElementById("resena-calificacion");
+      const comentarioTxt = document.getElementById("resena-comentario");
+
+      const nombre = (nombreInput?.value || "").trim() || "Anónimo";
+      const calificacionStr = califSel?.value || "";
+      const comentario = (comentarioTxt?.value || "").trim();
+
+      const calificacion = parseInt(calificacionStr, 10);
+
+      if(!calificacion || calificacion < 1 || calificacion > 5){
+        mostrarMensajeResena("Selecciona una calificación entre 1 y 5 estrellas.", "error");
+        return;
+      }
+      if(!comentario){
+        mostrarMensajeResena("Escribe un comentario para tu reseña.", "error");
+        return;
+      }
+
+      try {
+        mostrarMensajeResena("Enviando tu reseña...", "info");
+
+        const res = await fetch(`${API_BASE}/resenas`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, calificacion, comentario })
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok || data.ok === false){
+          console.error("Error al guardar reseña:", data);
+          mostrarMensajeResena(data.error || "Ocurrió un error al guardar tu reseña.", "error");
+          return;
+        }
+
+        mostrarMensajeResena("¡Gracias! Tu reseña fue enviada y se publicará cuando sea aprobada.", "ok");
+        // Limpiar solo calificación y comentario
+        if(califSel) califSel.value = "";
+        if(comentarioTxt) comentarioTxt.value = "";
+      } catch (err) {
+        console.error("Error al conectar con el servidor:", err);
+        mostrarMensajeResena("No se pudo conectar con el servidor. Intenta más tarde.", "error");
+      }
+    }
+
+    function renderResenasLista(lista){
+      const ul = document.getElementById("resenas-lista");
+      const resumen = document.getElementById("resenas-resumen");
+      const promedioDiv = document.getElementById("resenas-promedio");
+
+      if(!ul || !resumen || !promedioDiv) return;
+
+      ul.innerHTML = "";
+
+      if(!lista.length){
+        ul.innerHTML = `
+          <li style="padding:6px 2px;font-size:12px;color:#777">
+            Aún no hay reseñas publicadas. ¡Sé la primera persona en escribir una!
+          </li>
+        `;
+        resumen.textContent = "0 reseñas publicadas.";
+        promedioDiv.innerHTML = "";
+        return;
+      }
+
+      // Promedio
+      const sum = lista.reduce((acc, r) => acc + (Number(r.calificacion || 0) || 0), 0);
+      const avg = sum / lista.length;
+      const avgRedondeado = Math.round(avg * 10) / 10;
+
+      resumen.textContent = `${lista.length} reseña(s) publicada(s).`;
+      promedioDiv.innerHTML = `
+        <div style="font-size:14px;font-weight:600">${avgRedondeado.toFixed(1)} / 5</div>
+        <div style="font-size:16px;color:#f5a623">
+          ${estrellasTexto(Math.round(avg))}
+        </div>
+      `;
+
+      // Ordenar por fecha (si viene ts)
+      const listaOrdenada = lista.slice().sort((a,b) => {
+        const ta = a.ts || "";
+        const tb = b.ts || "";
+        return (tb > ta) ? 1 : (tb < ta ? -1 : 0);
+      });
+
+      // Mostrar máximo 20 para que no esté enorme
+      listaOrdenada.slice(0, 20).forEach(r => {
+        const li = document.createElement("li");
+        li.style.padding = "8px 2px";
+        li.style.borderBottom = "1px solid #eee";
+
+        const nombre = r.nombre || "Anónimo";
+        const estrellas = estrellasTexto(r.calificacion);
+        const comentario = r.comentario || "";
+        const fecha = r.ts || "";
+
+        li.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <div style="font-size:13px;color:#333">
+                <strong>${nombre}</strong>
+              </div>
+              <div style="font-size:12px;color:#f5a623;margin-top:2px">
+                ${estrellas}
+              </div>
+            </div>
+            <div style="font-size:11px;color:#999;text-align:right">
+              ${fecha ? fecha : ""}
+            </div>
+          </div>
+          <div style="font-size:13px;color:#444;margin-top:4px">
+            ${comentario}
+          </div>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    async function cargarResenasPublicas(){
+      const ul = document.getElementById("resenas-lista");
+      const resumen = document.getElementById("resenas-resumen");
+      if(ul){
+        ul.innerHTML = `
+          <li style="padding:6px 2px;font-size:12px;color:#777">
+            Cargando reseñas...
+          </li>
+        `;
+      }
+      if(resumen){
+        resumen.textContent = "Cargando reseñas...";
+      }
+
+      try {
+        // Solo reseñas aprobadas
+        const url = new URL(`${API_BASE}/resenas`);
+        url.searchParams.set("estado", "aprobada");
+        const res = await fetch(url.toString());
+        const data = await res.json().catch(() => []);
+        const lista = Array.isArray(data) ? data : [];
+        renderResenasLista(lista);
+      } catch (err) {
+        console.error("Error cargando reseñas:", err);
+        if(ul){
+          ul.innerHTML = `
+            <li style="padding:6px 2px;font-size:12px;color:#b42318">
+              No se pudieron cargar las reseñas. Intenta más tarde.
+            </li>
+          `;
+        }
+        if(resumen){
+          resumen.textContent = "No se pudieron cargar las reseñas.";
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("resenaForm");
+      const btnLimpiar = document.getElementById("btn-limpiar-resena");
+
+      if(form){
+        form.addEventListener("submit", enviarResena);
+      }
+      if(btnLimpiar){
+        btnLimpiar.addEventListener("click", () => {
+          limpiarMensajeResena();
+        });
+      }
+
+      // Si el usuario está logueado, usar su nombre
+      if(window.$app && typeof $app.getUser === "function"){
+        const u = $app.getUser();
+        const inputNombre = document.getElementById("resena-nombre");
+        if(u && inputNombre && !inputNombre.value){
+          inputNombre.value = u.name || "";
+        }
+      }
+
+      cargarResenasPublicas();
     });
-  });
   </script>
 </body>
 </html>

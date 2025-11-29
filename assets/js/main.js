@@ -13,16 +13,23 @@
   const qs = (sel, el=document) => el.querySelector(sel);
   const qsa = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 
+  // -------------------------
+  // Carrito
+  // -------------------------
   function getCart(){
     try{ return JSON.parse(localStorage.getItem(STORAGE_KEYS.cart) || '[]'); }catch{ return [] }
   }
-  function setCart(cart){ localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(cart)); dispatchEvent(new CustomEvent('cart:changed')); }
+  function setCart(cart){
+    localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(cart));
+    dispatchEvent(new CustomEvent('cart:changed'));
+  }
   function cartCount(){ return getCart().reduce((a,i)=>a+i.qty,0); }
 
   function addToCart(id, qty=1){
     const cart = getCart();
     const found = cart.find(i=>i.id===id);
-    if(found) found.qty += qty; else cart.push({id, qty});
+    if(found) found.qty += qty;
+    else cart.push({id, qty});
     setCart(cart);
   }
   function updateQty(id, delta){
@@ -31,30 +38,116 @@
     if(!item) return;
     item.qty += delta;
     if(item.qty<=0){
-      const i = cart.indexOf(item); cart.splice(i,1);
+      const i = cart.indexOf(item);
+      cart.splice(i,1);
     }
     setCart(cart);
   }
-  function removeFromCart(id){ setCart(getCart().filter(i=>i.id!==id)); }
+  function removeFromCart(id){
+    setCart(getCart().filter(i=>i.id!==id));
+  }
 
-  // Auth
-  function getUser(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEYS.user)||'null'); }catch{ return null } }
-  function setUser(u){ if(u) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(u)); else localStorage.removeItem(STORAGE_KEYS.user); dispatchEvent(new CustomEvent('auth:changed')); }
-  function isAdmin(){ return getUser()?.role === 'admin'; }
+  // -------------------------
+  // Auth / Usuario
+  // -------------------------
+  function normalizeUser(u){
+    if(!u) return null;
+    // Soporta tanto estructura de BD (nombre, correo, telefono)
+    // como la de semilla local (name, email, phone)
+    return {
+      id: u.id ?? u.user_id ?? null,
+      name: u.name ?? u.nombre ?? 'Usuario',
+      email: u.email ?? u.correo ?? '',
+      phone: u.phone ?? u.telefono ?? '',
+      role: u.role ?? u.rol ?? 'user',   // admin | staff | user
+      activo: (u.activo !== undefined ? u.activo : 1)
+    };
+  }
 
+  function getUser(){
+    try{
+      const raw = JSON.parse(localStorage.getItem(STORAGE_KEYS.user)||'null');
+      return normalizeUser(raw);
+    }catch{
+      return null;
+    }
+  }
+  function setUser(u){
+    if(u){
+      const norm = normalizeUser(u);
+      localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(norm));
+    }else{
+      localStorage.removeItem(STORAGE_KEYS.user);
+    }
+    dispatchEvent(new CustomEvent('auth:changed'));
+  }
+
+  function userRole(){
+    const u = getUser();
+    return u ? u.role : null;
+  }
+  function isAdmin(){ return userRole() === 'admin'; }
+  function isStaff(){ return userRole() === 'staff'; }
+  function isUser(){ return userRole() === 'user'; }
+
+  // Redirección para páginas de administración (solo admin)
+  function requireAdmin(){
+    const user = getUser();
+    const here = location.pathname.split('/').pop() || 'index.html';
+
+    if(!user){
+      // No hay sesión → mandamos a login con ?next=...
+      location.href = `login.html?next=${encodeURIComponent(here)}`;
+      return;
+    }
+    if(user.role !== 'admin'){
+      alert('Esta sección es solo para administradores.');
+      location.href = 'index.html';
+    }
+  }
+
+  // Redirección para páginas de staff (staff o admin)
+  function requireStaff(){
+    const user = getUser();
+    const here = location.pathname.split('/').pop() || 'index.html';
+
+    if(!user){
+      location.href = `login.html?next=${encodeURIComponent(here)}`;
+      return;
+    }
+    if(user.role !== 'staff' && user.role !== 'admin'){
+      alert('Esta sección es solo para el personal del restaurante.');
+      location.href = 'index.html';
+    }
+  }
+
+  // -------------------------
   // Products persistence (admin can override)
+  // -------------------------
   function getProducts(){
     const saved = localStorage.getItem(STORAGE_KEYS.products);
-    if(saved){ try{ return JSON.parse(saved);}catch{ /* ignore */ } }
+    if(saved){
+      try{ return JSON.parse(saved);}catch{ /* ignore */ }
+    }
     // seed from APP_DATA with default availability true
     const base = (window.APP_DATA?.products||[]).map(p=>({available:true, ...p}));
     return base;
   }
-  function saveProducts(list){ localStorage.setItem(STORAGE_KEYS.products, JSON.stringify(list)); dispatchEvent(new CustomEvent('products:changed')); }
+  function saveProducts(list){
+    localStorage.setItem(STORAGE_KEYS.products, JSON.stringify(list));
+    dispatchEvent(new CustomEvent('products:changed'));
+  }
 
-  // Orders
-  function listOrders(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEYS.orders)||'[]'); }catch{ return [] } }
-  function saveOrders(list){ localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(list)); dispatchEvent(new CustomEvent('orders:changed')); }
+  // -------------------------
+  // Orders (local, para página de demo)
+  // -------------------------
+  function listOrders(){
+    try{ return JSON.parse(localStorage.getItem(STORAGE_KEYS.orders)||'[]'); }catch{ return [] }
+  }
+  function saveOrders(list){
+    localStorage.setItem(STORAGE_KEYS.orders, JSON.stringify(list));
+    dispatchEvent(new CustomEvent('orders:changed'));
+  }
   function addOrder(order){
     const list = listOrders();
     const id = (list[list.length-1]?.id||0) + 1;
@@ -62,26 +155,44 @@
     saveOrders(list);
     return id;
   }
-  function updateOrder(id, patch){ const list=listOrders(); const o=list.find(x=>x.id===id); if(!o) return; Object.assign(o, patch); saveOrders(list); }
+  function updateOrder(id, patch){
+    const list = listOrders();
+    const o = list.find(x=>x.id===id);
+    if(!o) return;
+    Object.assign(o, patch);
+    saveOrders(list);
+  }
 
-  // Users
+  // -------------------------
+  // Users (semilla local)
+  // -------------------------
   function getUsers(){
     const raw = localStorage.getItem(STORAGE_KEYS.users);
-    if(raw){ try{ return JSON.parse(raw); }catch{ /* ignore */ } }
+    if(raw){
+      try{ return JSON.parse(raw); }catch{ /* ignore */ }
+    }
     // seed demo users
     const seed = [
-      { id:1, name:'Admin Nombre', email:'admin@lmd.com', phone:'0000000000', role:'admin' },
-      { id:2, name:'Cliente Nombre', email:'cliente@lmd.com', phone:'0000000000', role:'user' }
+      { id:1, name:'Admin Nombre',   email:'admin@lmd.com',   phone:'0000000000', role:'admin' },
+      { id:2, name:'Cliente Nombre', email:'cliente@lmd.com', phone:'0000000000', role:'user' },
+      { id:3, name:'Staff Demo',     email:'staff@lmd.com',   phone:'0000000000', role:'staff' }
     ];
     localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(seed));
     return seed;
   }
-  function saveUsers(list){ localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(list)); dispatchEvent(new CustomEvent('users:changed')); }
+  function saveUsers(list){
+    localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(list));
+    dispatchEvent(new CustomEvent('users:changed'));
+  }
 
+  // -------------------------
   // About us content
+  // -------------------------
   function getAbout(){
     const raw = localStorage.getItem(STORAGE_KEYS.about);
-    if(raw){ try{ return JSON.parse(raw); }catch{/* ignore */} }
+    if(raw){
+      try{ return JSON.parse(raw); }catch{/* ignore */}
+    }
     return {
       name:'La Media Docena',
       descripcion:'En La Media Docena celebramos la cocina mexicana con recetas de casa, tortillas al momento e ingredientes frescos de productores locales. Un lugar familiar, sabroso y auténtico.',
@@ -89,9 +200,14 @@
       vision:'Ser el restaurante mexicano de referencia en la ciudad, reconocido por su servicio y compromiso con la tradición, creciendo de forma sostenible y expandiéndonos sin perder nuestra esencia.'
     };
   }
-  function saveAbout(data){ localStorage.setItem(STORAGE_KEYS.about, JSON.stringify(data)); dispatchEvent(new CustomEvent('about:changed')); }
+  function saveAbout(data){
+    localStorage.setItem(STORAGE_KEYS.about, JSON.stringify(data));
+    dispatchEvent(new CustomEvent('about:changed'));
+  }
 
+  // -------------------------
   // Layout rendering
+  // -------------------------
   function renderLayout(){
     const page = document.body.dataset.page || '';
     const app = document.createElement('div');
@@ -99,17 +215,35 @@
 
     const sidebar = document.createElement('nav');
     sidebar.className = 'sidebar';
+
     const user = getUser();
-    const adminLink = isAdmin() ? `<a href="admin.html" class="${page==='admin'?'active':''}">Administración</a>` : '';
-    const authLink = user ? `<a href="#" id="logoutLink">Salir (${user.name||'usuario'})</a>` : `<a href="login.html" class="${page==='login'?'active':''}">Acceder</a>`;
+    const role = user ? user.role : null;
+
+    let adminLink = '';
+    let staffLink = '';
+
+    if(role === 'admin'){
+      adminLink = `<a href="admin.html" class="${page==='admin'?'active':''}">Panel administrador</a>`;
+    }
+    if(role === 'staff'){
+      staffLink = `<a href="staff.html" class="${page==='staff'?'active':''}">Panel staff</a>`;
+    }
+
+    const authLink = user
+      ? `<a href="#" id="logoutLink">Salir (${user.name||'usuario'})</a>`
+      : `<a href="login.html" class="${page==='login'?'active':''}">Acceder</a>`;
+
     sidebar.innerHTML = `
       <a href="index.html" class="${page==='inicio'?'active':''}">Inicio</a>
       <a href="menu.html" class="${page==='menu'?'active':''}">Menu</a>
-      <a href="pedidos.html" class="${page==='pedidos'?'active':''}">Carritos/pedidos <span class="badge" id="navCart"></span></a>
+      <a href="pedidos.html" class="${page==='pedidos'?'active':''}">
+        Carritos/pedidos <span class="badge" id="navCart"></span>
+      </a>
       <a href="resenas.html" class="${page==='resenas'?'active':''}">Reseñas</a>
       <a href="acerca.html" class="${page==='acerca'?'active':''}">Acerca de nosotros</a>
       <a href="contacto.html" class="${page==='contacto'?'active':''}">Contacto</a>
       <a href="reservar.html" class="${page==='reservar'?'active':''}">Reservar mesa</a>
+      ${staffLink}
       ${adminLink}
       ${authLink}
     `;
@@ -121,7 +255,7 @@
     const main = document.createElement('main');
     const existing = qs('main');
     if(existing){
-      // If developer already has a main tag, keep it
+      // Si ya hay un main en el HTML, lo reutilizamos
       existing.classList.add('container');
       app.append(sidebar, header, existing);
     } else {
@@ -132,30 +266,48 @@
     }
 
     document.body.prepend(app);
-    // Move original body children inside main (except the app itself)
+    // Mover hijos originales del body al main (excepto el .app)
     const children = qsa('body > :not(.app)');
     children.forEach(ch=> main.appendChild(ch));
 
-    function updateNavCart(){ const badge=qs('#navCart'); if(badge){ const c=cartCount(); badge.style.display=c?"inline-block":"none"; badge.textContent=c; } }
+    function updateNavCart(){
+      const badge = qs('#navCart');
+      if(badge){
+        const c = cartCount();
+        badge.style.display = c ? 'inline-block' : 'none';
+        badge.textContent = c;
+      }
+    }
     updateNavCart();
     addEventListener('cart:changed', updateNavCart);
 
     const logout = qs('#logoutLink');
-    if(logout){ logout.addEventListener('click', (e)=>{ e.preventDefault(); setUser(null); location.href = 'index.html'; }); }
+    if(logout){
+      logout.addEventListener('click', (e)=>{
+        e.preventDefault();
+        setUser(null);
+        location.href = 'index.html';
+      });
+    }
   }
 
+  // -------------------------
   // Public API
+  // -------------------------
   window.$app = {
+    // carrito
     addToCart, updateQty, removeFromCart, getCart, setCart,
     findProduct(id){ return (window.APP_DATA?.products||[]).find(p=>p.id===id); },
     formatCurrency(n){ return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(n); },
     // auth
-    getUser, setUser, isAdmin,
+    getUser, setUser,
+    userRole, isAdmin, isStaff, isUser,
+    requireAdmin, requireStaff,
     // products
     getProducts, saveProducts,
     // orders
     listOrders, addOrder, updateOrder,
-    // users
+    // users (semilla local)
     getUsers, saveUsers,
     // about
     getAbout, saveAbout

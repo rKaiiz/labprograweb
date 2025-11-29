@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Contacto (Admin) · La Media Docena</title>
+
+  <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales para layout y auth -->
+  <script defer src="assets/js/data.js"></script>
+  <script defer src="assets/js/main.js"></script>
+</head>
+<body data-page="admin">
+  <main class="container">
+
+    <!-- Encabezado -->
+    <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <div>
+        <h1 style="margin:0">Mensajes de contacto</h1>
+        <p style="margin:4px 0 0;font-size:13px;color:#555;max-width:520px">
+          Monitorea los mensajes que envían los clientes desde el módulo de contacto y da seguimiento a cada uno.
+        </p>
+      </div>
+      <nav style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn secondary" href="admin.html">← Volver al panel</a>
+        <a class="btn secondary" href="contacto.html">Ver formulario público</a>
+      </nav>
+    </header>
+
+    <!-- Resumen de estados -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:15px">Resumen de mensajes</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;font-size:13px">
+        <div style="padding:8px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe">
+          <div style="font-size:11px;text-transform:uppercase;color:#1d4ed8;letter-spacing:.04em">Total</div>
+          <div id="stat-total" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#1d4ed8">Mensajes recibidos</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
+          <div style="font-size:11px;text-transform:uppercase;color:#854d0e;letter-spacing:.04em">Nuevos</div>
+          <div id="stat-nuevo" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#854d0e">Sin revisar</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#ecfdf3;border:1px solid #bbf7d0">
+          <div style="font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:.04em">En proceso</div>
+          <div id="stat-enproceso" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#166534">Atendiendo</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca">
+          <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;letter-spacing:.04em">Cerrados</div>
+          <div id="stat-cerrado" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#b91c1c">Resueltos</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filtros -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:15px">Filtros</h2>
+      <form id="filtrosForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end">
+        <div>
+          <label for="filtro-busqueda">Buscar</label>
+          <input class="input" id="filtro-busqueda" placeholder="Nombre, correo, teléfono o asunto">
+          <p style="margin:4px 0 0;font-size:11px;color:#777">
+            Búsqueda general sobre el listado actual.
+          </p>
+        </div>
+        <div>
+          <label for="filtro-estado">Estado</label>
+          <select class="input" id="filtro-estado">
+            <option value="">Todos</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="en_proceso">En proceso</option>
+            <option value="cerrado">Cerrado</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn secondary" type="button" id="btn-limpiar-filtros">Limpiar</button>
+          <button class="btn" type="submit">Aplicar filtros</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Lista de mensajes -->
+    <section class="card">
+      <h2 style="margin-top:0;font-size:15px">Listado de mensajes</h2>
+      <div style="overflow-x:auto;margin-top:8px">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ID</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">CLIENTE</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">CONTACTO</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ASUNTO</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">MENSAJE</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">FECHA/HORA</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:center">ESTADO</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:center">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="contactos-body">
+            <tr>
+              <td colspan="8" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Cargando mensajes...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:5000/api";
+
+    let todosContactos = [];
+    let contactosFiltrados = [];
+
+    function showToast(msg) {
+      console.log("[ADMIN CONTACTO]", msg);
+      alert(msg);
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    // ---------- CARGA DESDE API ----------
+    async function cargarContactosDesdeAPI() {
+      const tbody = document.getElementById("contactos-body");
+      try {
+        const res = await fetch(`${API_BASE}/contactos`);
+        const data = await res.json();
+        todosContactos = Array.isArray(data) ? data : [];
+        aplicarFiltros();
+      } catch (err) {
+        console.error("Error cargando contactos:", err);
+        if (tbody) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+                No se pudieron cargar los mensajes. Verifica que el servidor Flask y la ruta /api/contactos estén activos.
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    function aplicarFiltros() {
+      const estadoSel = document.getElementById("filtro-estado").value;
+      const texto = document.getElementById("filtro-busqueda").value.trim().toLowerCase();
+
+      contactosFiltrados = todosContactos.filter(c => {
+        let okEstado = true;
+        if (estadoSel) {
+          okEstado = String(c.estado) === String(estadoSel);
+        }
+
+        let okTexto = true;
+        if (texto) {
+          const blob = [
+            c.nombre || "",
+            c.correo || "",
+            c.telefono || "",
+            c.asunto || "",
+            c.mensaje || ""
+          ].join(" ").toLowerCase();
+          okTexto = blob.includes(texto);
+        }
+        return okEstado && okTexto;
+      });
+
+      actualizarResumen();
+      renderContactos();
+    }
+
+    function actualizarResumen() {
+      const total = contactosFiltrados.length || 0;
+      const nuevo = contactosFiltrados.filter(c => c.estado === "nuevo").length;
+      const enProc = contactosFiltrados.filter(c => c.estado === "en_proceso").length;
+      const cerr = contactosFiltrados.filter(c => c.estado === "cerrado").length;
+
+      setText("stat-total", total);
+      setText("stat-nuevo", nuevo);
+      setText("stat-enproceso", enProc);
+      setText("stat-cerrado", cerr);
+    }
+
+    function renderContactos() {
+      const tbody = document.getElementById("contactos-body");
+      tbody.innerHTML = "";
+
+      if (!contactosFiltrados.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="padding:6px;text-align:center;font-size:12px;color:#777">
+              No hay mensajes que coincidan con los filtros actuales.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      contactosFiltrados.forEach(c => {
+        const tr = document.createElement("tr");
+
+        let chipBg = "#fefce8";
+        let chipBorder = "#fef08a";
+        let chipText = "#854d0e";
+        let label = c.estado || "nuevo";
+
+        if (c.estado === "en_proceso") {
+          chipBg = "#eff6ff";
+          chipBorder = "#bfdbfe";
+          chipText = "#1d4ed8";
+          label = "en proceso";
+        }
+        if (c.estado === "cerrado") {
+          chipBg = "#ecfdf3";
+          chipBorder = "#bbf7d0";
+          chipText = "#166534";
+          label = "cerrado";
+        }
+
+        const fechaTxt = c.ts || c.fecha || "";
+
+        tr.innerHTML = `
+          <td style="padding:4px;border-bottom:1px solid #eee">${c.id}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee">
+            <strong>${c.nombre || ""}</strong>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            <div>${c.correo || ""}</div>
+            <div>${c.telefono || ""}</div>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            ${c.asunto || ""}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#444;max-width:260px">
+            <div style="white-space:pre-wrap">${(c.mensaje || "").slice(0, 200)}</div>
+            ${ (c.mensaje && c.mensaje.length > 200)
+              ? '<div style="font-size:11px;color:#999;margin-top:2px">…</div>'
+              : ''
+            }
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            ${fechaTxt}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <span style="
+              font-size:11px;
+              padding:2px 6px;
+              border-radius:999px;
+              border:1px solid ${chipBorder};
+              background:${chipBg};
+              color:${chipText};
+              text-transform:capitalize;
+            ">
+              ${label}
+            </span>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center;font-size:11px">
+            <button
+              class="btn secondary btn-contacto-estado"
+              data-id="${c.id}"
+              data-estado="nuevo"
+              style="padding:2px 6px;margin:1px"
+            >
+              Nuevo
+            </button>
+            <button
+              class="btn secondary btn-contacto-estado"
+              data-id="${c.id}"
+              data-estado="en_proceso"
+              style="padding:2px 6px;margin:1px"
+            >
+              En proceso
+            </button>
+            <button
+              class="btn secondary btn-contacto-estado"
+              data-id="${c.id}"
+              data-estado="cerrado"
+              style="padding:2px 6px;margin:1px"
+            >
+              Cerrado
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ---------- ACTUALIZAR ESTADO EN BD ----------
+    async function actualizarEstadoContacto(id, nuevoEstado) {
+      if (!id || !nuevoEstado) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/contactos/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ estado: nuevoEstado })
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "No se pudo actualizar el mensaje.");
+        }
+
+        showToast(`Mensaje #${id} actualizado a "${nuevoEstado}".`);
+        await cargarContactosDesdeAPI();
+      } catch (err) {
+        console.error("Error al actualizar estado de contacto:", err);
+        showToast(err.message || "Error al actualizar el mensaje.");
+      }
+    }
+
+    // ---------- EVENTOS ----------
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.$app && typeof $app.requireAdmin === "function") {
+        $app.requireAdmin();
+      }
+
+      cargarContactosDesdeAPI();
+
+      const formFiltros = document.getElementById("filtrosForm");
+      formFiltros.addEventListener("submit", (e) => {
+        e.preventDefault();
+        aplicarFiltros();
+      });
+
+      document.getElementById("btn-limpiar-filtros").addEventListener("click", () => {
+        document.getElementById("filtro-busqueda").value = "";
+        document.getElementById("filtro-estado").value = "";
+        aplicarFiltros();
+      });
+
+      document.getElementById("filtro-estado").addEventListener("change", aplicarFiltros);
+      document.getElementById("filtro-busqueda").addEventListener("input", () => {
+        // filtro en vivo
+        aplicarFiltros();
+      });
+
+      document.getElementById("contactos-body").addEventListener("click", (e) => {
+        const btn = e.target.closest(".btn-contacto-estado");
+        if (btn) {
+          const id = btn.dataset.id;
+          const estado = btn.dataset.estado;
+          actualizarEstadoContacto(id, estado);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

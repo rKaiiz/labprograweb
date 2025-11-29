@@ -4,50 +4,202 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Acceder · La Media Docena</title>
+
+  <!-- Estilos globales -->
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="login">
   <main class="container">
-    <section class="hero">
-      <div style="background:url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1400&auto=format&fit=crop') center/cover;height:380px;border-radius:14px"></div>
-      <div class="panel">
-        <h1 style="text-align:center">Bienvenido</h1>
-        <form id="loginForm">
-          <label>Correo o usuario</label>
-          <input class="input" name="user" required placeholder="admin@lmd.com">
-          <label style="margin-top:10px">Contraseña</label>
-          <input class="input" type="password" name="pass" required placeholder="••••••">
-          <div style="display:flex;gap:12px;justify-content:center;margin-top:16px">
-            <button class="btn" type="submit">Iniciar sesión</button>
-            <a class="btn secondary" href="index.html">Cancelar</a>
+
+    <!-- Encabezado -->
+    <header style="margin-bottom:16px;text-align:center">
+      <h1 style="margin:0 0 4px">Acceder</h1>
+      <p style="margin:0;font-size:13px;color:#555">
+        Inicia sesión para administrar el contenido de La Media Docena.
+      </p>
+    </header>
+
+    <!-- CARD LOGIN -->
+    <section class="card" style="max-width:420px;margin:0 auto">
+      <h2 style="margin-top:0;font-size:16px;text-align:center">Inicio de sesión</h2>
+
+      <form id="loginForm" autocomplete="on">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <label for="login-correo">Correo electrónico</label>
+            <input
+              class="input"
+              id="login-correo"
+              name="correo"
+              type="email"
+              required
+              placeholder="Ej. admin@lmd.com"
+            >
           </div>
-          <p style="font-size:12px;color:#222;margin-top:10px">Demo: admin@lmd.com / admin123 • cliente@lmd.com / 123456</p>
-        </form>
-      </div>
+
+          <div>
+            <label for="login-password">Contraseña</label>
+            <input
+              class="input"
+              id="login-password"
+              name="password"
+              type="password"
+              required
+              placeholder="Ingresa tu contraseña"
+            >
+          </div>
+        </div>
+
+        <p id="login-msg" style="margin-top:10px;font-size:13px;display:none"></p>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:8px;flex-wrap:wrap">
+          <span style="font-size:11px;color:#777">
+            Usa las credenciales registradas en el sistema.
+          </span>
+          <button class="btn" type="submit" id="btn-login">
+            Iniciar sesión
+          </button>
+        </div>
+      </form>
     </section>
+
   </main>
 
   <script>
-  const DEMO = [
-    { user:'admin@lmd.com', pass:'admin123', name:'Admin', role:'admin' },
-    { user:'cliente@lmd.com', pass:'123456', name:'Cliente', role:'user' }
-  ];
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const form = document.getElementById('loginForm');
-    form.addEventListener('submit', (e)=>{
+    const API_BASE = "http://127.0.0.1:5000/api";
+
+    function mostrarMensajeLogin(texto, tipo = "info") {
+      const p = document.getElementById("login-msg");
+      if (!p) return;
+      p.style.display = "block";
+      p.textContent = texto;
+      if (tipo === "ok") {
+        p.style.color = "#1a7f37"; // verde
+      } else if (tipo === "error") {
+        p.style.color = "#b42318"; // rojo
+      } else {
+        p.style.color = "#555"; // neutro
+      }
+    }
+
+    function limpiarMensajeLogin() {
+      const p = document.getElementById("login-msg");
+      if (p) {
+        p.style.display = "none";
+        p.textContent = "";
+      }
+    }
+
+    async function manejarLogin(e) {
       e.preventDefault();
-      const fd = new FormData(form);
-      const u = fd.get('user');
-      const p = fd.get('pass');
-      const found = DEMO.find(x=>x.user===u && x.pass===p);
-      if(!found){ alert('Credenciales inválidas'); return; }
-      $app.setUser({ name:found.name, email:found.user, role:found.role });
-      const next = new URLSearchParams(location.search).get('next') || 'index.html';
-      location.href = next;
+
+      const correoInput = document.getElementById("login-correo");
+      const passInput = document.getElementById("login-password");
+      const btn = document.getElementById("btn-login");
+
+      const correo = (correoInput?.value || "").trim();
+      const password = (passInput?.value || "").trim();
+
+      if (!correo || !password) {
+        mostrarMensajeLogin("Por favor ingresa tu correo y contraseña.", "error");
+        return;
+      }
+
+      try {
+        mostrarMensajeLogin("Verificando credenciales...", "info");
+        if (btn) btn.disabled = true;
+
+        const res = await fetch(`${API_BASE}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ correo, password })
+        });
+
+        let data = {};
+        try {
+          data = await res.json();
+        } catch {
+          data = {};
+        }
+
+        if (!res.ok || data.ok === false || !data.user) {
+          console.error("Error login:", data);
+          mostrarMensajeLogin(
+            data.error || "Credenciales inválidas. Verifica tu correo y contraseña.",
+            "error"
+          );
+          if (btn) btn.disabled = false;
+          return;
+        }
+
+        const userDb = data.user;
+
+        // Transformar a formato que usa main.js
+        const userApp = {
+          id: userDb.id,
+          name: userDb.nombre,
+          email: userDb.correo,
+          phone: userDb.telefono || "",
+          role: userDb.role || "user"
+        };
+
+        if (window.$app && typeof $app.setUser === "function") {
+          $app.setUser(userApp);
+        }
+
+        mostrarMensajeLogin("Inicio de sesión correcto. Redirigiendo...", "ok");
+
+        // Redirigir según rol
+        if (userApp.role === "admin") {
+          window.location.href = "admin.html";
+        } else {
+          window.location.href = "index.html";
+        }
+      } catch (err) {
+        console.error("Error al conectar con el servidor:", err);
+        mostrarMensajeLogin(
+          "No se pudo conectar con el servidor. Verifica que el backend esté ejecutándose.",
+          "error"
+        );
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("loginForm");
+      const correoInput = document.getElementById("login-correo");
+      const passInput = document.getElementById("login-password");
+
+      // Si ya hay usuario logueado, puedes redirigir directo
+      if (window.$app && typeof $app.getUser === "function") {
+        const u = $app.getUser();
+        if (u && u.role) {
+          // Ya hay sesión
+          if (u.role === "admin") {
+            window.location.href = "admin.html";
+            return;
+          } else {
+            window.location.href = "index.html";
+            return;
+          }
+        }
+      }
+
+      if (form) {
+        form.addEventListener("submit", manejarLogin);
+      }
+
+      if (correoInput) {
+        correoInput.addEventListener("input", limpiarMensajeLogin);
+      }
+      if (passInput) {
+        passInput.addEventListener("input", limpiarMensajeLogin);
+      }
     });
-  });
   </script>
 </body>
 </html>

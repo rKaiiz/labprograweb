@@ -4,52 +4,294 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Menú · La Media Docena</title>
+
+  <!-- Estilos globales -->
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="menu">
   <main class="container">
-    <div class="card" style="margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-      <strong>Categoría:</strong>
-      <select id="cat"></select>
-      <div style="margin-left:auto;display:flex;gap:8px">
-        <a class="btn" href="pedidos.html">Ver carrito</a>
+
+    <!-- Encabezado -->
+    <header style="margin-bottom:16px">
+      <h1 style="margin:0 0 4px">Menú</h1>
+      <p style="margin:0;font-size:13px;color:#555">
+        Descubre nuestros platillos y agrégalos a tu carrito para armar tu pedido en La Media Docena.
+      </p>
+    </header>
+
+    <!-- Filtros -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:16px">Buscar en el menú</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:flex-end">
+        <div>
+          <label for="filtro-texto">Buscar platillo</label>
+          <input
+            id="filtro-texto"
+            class="input"
+            placeholder="Ej. chilaquiles, café, flan..."
+          >
+        </div>
+        <div>
+          <label for="filtro-categoria">Categoría</label>
+          <select id="filtro-categoria" class="input">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtro-disponible">Disponibilidad</label>
+          <select id="filtro-disponible" class="input">
+            <option value="solo">Solo disponibles</option>
+            <option value="todos">Mostrar todos</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <section class="grid cards" id="list"></section>
+      <p id="menu-resumen" style="margin-top:8px;font-size:12px;color:#777">Cargando menú...</p>
+    </section>
+
+    <!-- Listado de platillos -->
+    <section>
+      <div id="menu-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px"></div>
+
+      <div id="menu-vacio" style="display:none;margin-top:12px;padding:12px;border-radius:8px;border:1px dashed #ccc;background:#fafafa;font-size:13px;color:#555">
+        No se encontraron platillos con los filtros seleccionados.
+      </div>
+    </section>
+
   </main>
 
   <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const catSel = document.getElementById('cat');
-    const list = document.getElementById('list');
-    const {categories} = window.APP_DATA;
+    const API_BASE = "http://127.0.0.1:5000/api";
 
-    catSel.innerHTML = `<option value="all">Todos</option>` + categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    let categoriasCache = [];
+    let platillosCache = [];
 
-    function render(){
-      const cat = catSel.value;
-      const items = $app.getProducts().filter(p=> (p.available!==false) && (cat==='all' || p.category===cat));
-      list.innerHTML = items.map(p => `
-        <article class="card product">
-          <img src="${p.img}" alt="${p.name}">
-          <div>
-            <h3>${p.name}</h3>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <span class="price">${$app.formatCurrency(p.price)}</span>
-              <button class="btn" data-id="${p.id}">Agregar</button>
-            </div>
-          </div>
-        </article>`).join('');
-      list.querySelectorAll('button[data-id]').forEach(btn=>{
-        btn.addEventListener('click', () => $app.addToCart(btn.dataset.id, 1));
+    function formatMoney(n){
+      if(window.$app && typeof $app.formatCurrency === "function"){
+        return $app.formatCurrency(Number(n || 0));
+      }
+      return `$${Number(n || 0).toFixed(2)}`;
+    }
+
+    function showToast(msg){
+      // sencillo; si luego tienes un componente de alerta, lo puedes cambiar aquí
+      alert(msg);
+    }
+
+    async function cargarCategorias(){
+      try {
+        const res = await fetch(`${API_BASE}/categorias`);
+        const data = await res.json();
+        categoriasCache = Array.isArray(data) ? data : [];
+        renderFiltroCategorias();
+      } catch (err) {
+        console.error("Error cargando categorías:", err);
+        categoriasCache = [];
+      }
+    }
+
+    function renderFiltroCategorias(){
+      const sel = document.getElementById("filtro-categoria");
+      if(!sel) return;
+      const valorActual = sel.value;
+      sel.innerHTML = "";
+
+      const optAll = document.createElement("option");
+      optAll.value = "";
+      optAll.textContent = "Todas";
+      sel.appendChild(optAll);
+
+      categoriasCache.forEach(cat => {
+        const opt = document.createElement("option");
+        opt.value = String(cat.id);
+        opt.textContent = cat.nombre;
+        sel.appendChild(opt);
+      });
+
+      if(valorActual) sel.value = valorActual;
+    }
+
+    async function cargarPlatillos(){
+      try {
+        const res = await fetch(`${API_BASE}/platillos`);
+        const data = await res.json();
+        platillosCache = Array.isArray(data) ? data : [];
+        renderMenu();
+      } catch (err) {
+        console.error("Error cargando platillos:", err);
+        platillosCache = [];
+        renderMenu();
+      }
+    }
+
+    function aplicarFiltros(){
+      const txt = document.getElementById("filtro-texto").value.trim().toLowerCase();
+      const cat = document.getElementById("filtro-categoria").value;
+      const disp = document.getElementById("filtro-disponible").value || "solo";
+
+      return platillosCache.filter(p => {
+        // disponibilidad
+        if(disp === "solo" && !p.disponible) return false;
+
+        // categoría
+        if(cat && String(p.id_categoria) !== String(cat)) return false;
+
+        // texto
+        if(txt){
+          const nombre = (p.nombre || "").toLowerCase();
+          const desc = (p.descripcion || "").toLowerCase();
+          if(!nombre.includes(txt) && !desc.includes(txt)) return false;
+        }
+
+        return true;
       });
     }
 
-    catSel.addEventListener('change', render);
-    render();
-  });
+    function obtenerNombreCategoria(idCat){
+      if(!idCat) return "";
+      const cat = categoriasCache.find(c => String(c.id) === String(idCat));
+      return cat ? cat.nombre : "";
+    }
+
+    function renderMenu(){
+      const grid = document.getElementById("menu-grid");
+      const resumen = document.getElementById("menu-resumen");
+      const vacio = document.getElementById("menu-vacio");
+
+      if(!grid || !resumen || !vacio) return;
+
+      const filtrados = aplicarFiltros();
+      grid.innerHTML = "";
+
+      if(!platillosCache.length){
+        resumen.textContent = "No se pudieron cargar los platillos. Revisa que el servidor esté activo.";
+        vacio.style.display = "block";
+        vacio.textContent = "No se encontraron platillos en el sistema.";
+        return;
+      }
+
+      resumen.textContent = filtrados.length
+        ? `${filtrados.length} platillo(s) encontrados.`
+        : "No se encontraron platillos con los filtros seleccionados.";
+
+      if(!filtrados.length){
+        vacio.style.display = "block";
+        vacio.textContent = "No se encontraron platillos con los filtros seleccionados.";
+        return;
+      }
+
+      vacio.style.display = "none";
+
+      filtrados.forEach(p => {
+        const card = document.createElement("article");
+        card.className = "card";
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.height = "100%";
+        card.style.padding = "10px";
+
+        const catNombre = obtenerNombreCategoria(p.id_categoria);
+        const disponible = !!p.disponible;
+
+        let imgHtml = "";
+        if(p.imagen){
+          imgHtml = `
+            <div style="width:100%;padding-top:56%;position:relative;border-radius:8px;overflow:hidden;margin-bottom:8px;background:#f0f0f0">
+              <img src="${p.imagen}"
+                   alt="${p.nombre || ''}"
+                   style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">
+            </div>
+          `;
+        }
+
+        const etiquetaCat = catNombre
+          ? `<span style="font-size:11px;color:#777">${catNombre}</span>`
+          : "";
+
+        const badgeDisp = disponible
+          ? `<span style="font-size:11px;padding:2px 6px;border-radius:999px;background:#e6f4ea;color:#137333;margin-left:6px">Disponible</span>`
+          : `<span style="font-size:11px;padding:2px 6px;border-radius:999px;background:#fce8e6;color:#b3261e;margin-left:6px">No disponible</span>`;
+
+        card.innerHTML = `
+          ${imgHtml}
+          <div style="flex:1 1 auto;display:flex;flex-direction:column;gap:4px">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+                <h3 style="margin:0;font-size:15px">${p.nombre || ""}</h3>
+                <div style="font-weight:600;font-size:14px">${formatMoney(p.precio || 0)}</div>
+              </div>
+              <div style="margin-top:2px">
+                ${etiquetaCat}
+                ${badgeDisp}
+              </div>
+            </div>
+            ${p.descripcion ? `
+              <p style="margin:4px 0 0;font-size:12px;color:#555">
+                ${p.descripcion}
+              </p>
+            ` : ""}
+          </div>
+          <div style="margin-top:8px;display:flex;justify-content:flex-end">
+            <button
+              class="btn"
+              type="button"
+              data-id="${p.id}"
+              ${!disponible ? "disabled" : ""}
+              style="font-size:13px;padding:6px 10px"
+            >
+              ${disponible ? "Agregar al carrito" : "No disponible"}
+            </button>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function manejarClickMenu(e){
+      const btn = e.target.closest("button[data-id]");
+      if(!btn) return;
+
+      const id = parseInt(btn.dataset.id, 10);
+      if(isNaN(id)) return;
+
+      if(!window.$app || typeof $app.addToCart !== "function"){
+        showToast("No se pudo agregar al carrito. La app no está inicializada.");
+        return;
+      }
+
+      $app.addToCart(id, 1);
+      showToast("Platillo agregado a tu carrito.");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const grid = document.getElementById("menu-grid");
+      const filtroTexto = document.getElementById("filtro-texto");
+      const filtroCat = document.getElementById("filtro-categoria");
+      const filtroDisp = document.getElementById("filtro-disponible");
+
+      if(grid){
+        grid.addEventListener("click", manejarClickMenu);
+      }
+
+      if(filtroTexto){
+        filtroTexto.addEventListener("input", () => renderMenu());
+      }
+      if(filtroCat){
+        filtroCat.addEventListener("change", () => renderMenu());
+      }
+      if(filtroDisp){
+        filtroDisp.addEventListener("change", () => renderMenu());
+      }
+
+      Promise.all([
+        cargarCategorias(),
+        cargarPlatillos()
+      ]).catch(err => console.error(err));
+    });
   </script>
 </body>
 </html>

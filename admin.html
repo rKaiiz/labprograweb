@@ -3,31 +3,286 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Panel de Administración · La Media Docena</title>
+  <title>Panel de administración · La Media Docena</title>
+
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="admin">
   <main class="container">
-    <h2 style="text-align:center;margin:0 0 14px">Panel de Administración</h2>
-    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))">
-      <a class="btn" href="admin-platillos.html">Gestionar Platillos</a>
-      <a class="btn" href="admin-pedidos.html">Gestionar Pedidos</a>
-      <a class="btn" href="admin-reservaciones.html">Gestionar Reservaciones</a>
-      <a class="btn" href="admin-resenas.html">Gestionar Reseñas</a>
-      <a class="btn" href="admin-usuarios.html">Gestionar Usuarios</a>
-      <a class="btn" href="admin-reporte.html">Reportes</a>
-      <a class="btn" href="admin-aboutus.html">Editar "Acerca de Nosotros"</a>
-    </div>
+    <!-- Encabezado -->
+    <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <div>
+        <h1 style="margin:0">Panel de administración</h1>
+        <p style="margin:4px 0 0;font-size:13px;color:#555;max-width:520px">
+          Desde aquí puedes gestionar el menú, las reservaciones, los pedidos, las reseñas de clientes,
+          la información de contacto y los usuarios del sistema.
+        </p>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:12px;color:#666">
+        <span id="admin-user-label">Sesión de administrador</span>
+        <a href="index.html" class="btn secondary" style="padding:4px 10px;font-size:12px">← Volver al inicio</a>
+      </div>
+    </header>
+
+    <!-- Resumen rápido -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:15px">Resumen general</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;font-size:13px">
+        <div style="padding:8px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa">
+          <div style="font-size:11px;text-transform:uppercase;color:#9a3412;letter-spacing:.04em">Platillos</div>
+          <div id="stat-platillos" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#9a3412">En el menú</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0">
+          <div style="font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:.04em">Categorías</div>
+          <div id="stat-categorias" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#166534">Agrupando el menú</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe">
+          <div style="font-size:11px;text-transform:uppercase;color:#1d4ed8;letter-spacing:.04em">Reservaciones</div>
+          <div id="stat-reservas" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#1d4ed8">Registros totales</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca">
+          <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;letter-spacing:.04em">Pedidos</div>
+          <div id="stat-pedidos" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#b91c1c">Pedidos registrados</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#f5f3ff;border:1px solid #ddd6fe">
+          <div style="font-size:11px;text-transform:uppercase;color:#5b21b6;letter-spacing:.04em">Reseñas pendientes</div>
+          <div id="stat-resenas-pend" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#5b21b6">Por revisar</div>
+        </div>
+        <div style="padding:8px;border-radius:10px;background:#ecfeff;border:1px solid #a5f3fc">
+          <div style="font-size:11px;text-transform:uppercase;color:#0f766e;letter-spacing:.04em">Usuarios</div>
+          <div id="stat-usuarios" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#0f766e">Registrados en el sistema</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Módulos -->
+    <section class="card">
+      <h2 style="margin-top:0;font-size:15px">Módulos de administración</h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:8px">
+
+        <!-- Platillos y categorías -->
+        <a href="admin-platillos.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">🍽️</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Platillos y categorías</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Agrega, edita o elimina platillos del menú y organiza las categorías.
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span><strong id="mod-platillos-count">–</strong> platillos · <strong id="mod-categorias-count">–</strong> categorías</span>
+                <span style="color:#2563eb;font-weight:500">Administrar →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Reservaciones -->
+        <a href="admin-reservaciones.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">📅</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Reservaciones</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Revisa, confirma o cancela reservaciones de mesa realizadas por los clientes.
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span><strong id="mod-reservas-count">–</strong> reservaciones</span>
+                <span style="color:#2563eb;font-weight:500">Ver reservaciones →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Pedidos -->
+        <a href="admin-pedidos.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">🧾</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Pedidos</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Consulta los pedidos realizados, su detalle y cambia el estado (en proceso, listo, entregado).
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span><strong id="mod-pedidos-count">–</strong> pedidos</span>
+                <span style="color:#2563eb;font-weight:500">Gestionar pedidos →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Reseñas -->
+        <a href="admin-resenas.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">⭐</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Reseñas de clientes</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Revisa los comentarios, aprueba o rechaza reseñas para mostrar en la página pública.
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span><strong id="mod-resenas-pend-count">–</strong> pendientes</span>
+                <span style="color:#2563eb;font-weight:500">Revisar reseñas →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Usuarios -->
+        <a href="admin-usuarios.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">👤</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Usuarios y roles</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Administra cuentas de acceso al sistema, roles de administrador o usuario y estado activo.
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span><strong id="mod-usuarios-count">–</strong> usuarios</span>
+                <span style="color:#2563eb;font-weight:500">Administrar usuarios →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Acerca de nosotros -->
+        <a href="admin-aboutus.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">🏠</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Acerca de La Media Docena</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Edita la información pública del restaurante: nombre, descripción, misión y visión.
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span>Contenido institucional</span>
+                <span style="color:#2563eb;font-weight:500">Editar información →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+        <!-- Contacto -->
+        <a href="admin-contacto.html" class="card"
+           style="text-decoration:none;border:1px solid #e5e7eb;transition:box-shadow .15s,transform .15s;cursor:pointer">
+          <div style="display:flex;align-items:flex-start;gap:8px">
+            <div style="font-size:22px">📨</div>
+            <div style="flex:1 1 auto">
+              <h3 style="margin:0 0 4px;font-size:14px">Mensajes de contacto</h3>
+              <p style="margin:0 0 8px;font-size:12px;color:#555">
+                Módulo para centralizar mensajes enviados desde la página de contacto.
+                (Se puede conectar después a la base de datos o correo).
+              </p>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#666">
+                <span><strong id="mod-contactos-count">–</strong> mensajes</span>
+                <span style="color:#2563eb;font-weight:500">Ver mensajes →</span>
+              </div>
+            </div>
+          </div>
+        </a>
+
+      </div>
+    </section>
   </main>
+
   <script>
-  document.addEventListener('DOMContentLoaded', ()=>{
-    if(!$app.isAdmin()){
-      const next = 'admin.html';
-      location.href = 'login.html?next='+encodeURIComponent(next);
+    const API_BASE = "http://127.0.0.1:5000/api";
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
     }
-  });
+
+    async function cargarDashboard() {
+      try {
+        const [
+          resPlatillos,
+          resCategorias,
+          resPedidos,
+          resReservas,
+          resResenasPend,
+          resUsuarios
+        ] = await Promise.all([
+          fetch(`${API_BASE}/platillos`),
+          fetch(`${API_BASE}/categorias`),
+          fetch(`${API_BASE}/pedidos`),
+          fetch(`${API_BASE}/reservaciones`),
+          fetch(`${API_BASE}/resenas?estado=pendiente`),
+          fetch(`${API_BASE}/usuarios`)
+        ]);
+
+        const platillos = await resPlatillos.json().catch(() => []);
+        const categorias = await resCategorias.json().catch(() => []);
+        const pedidos = await resPedidos.json().catch(() => []);
+        const reservas = await resReservas.json().catch(() => []);
+        const resenasPend = await resResenasPend.json().catch(() => []);
+        const usuarios = await resUsuarios.json().catch(() => []);
+
+        const totalPlatillos = Array.isArray(platillos) ? platillos.length : 0;
+        const totalCategorias = Array.isArray(categorias) ? categorias.length : 0;
+        const totalPedidos = Array.isArray(pedidos) ? pedidos.length : 0;
+        const totalReservas = Array.isArray(reservas) ? reservas.length : 0;
+        const totalResenasPend = Array.isArray(resenasPend) ? resenasPend.length : 0;
+        const totalUsuarios = Array.isArray(usuarios) ? usuarios.length : 0;
+
+        // Resumen
+        setText("stat-platillos", totalPlatillos);
+        setText("stat-categorias", totalCategorias);
+        setText("stat-pedidos", totalPedidos);
+        setText("stat-reservas", totalReservas);
+        setText("stat-resenas-pend", totalResenasPend);
+        setText("stat-usuarios", totalUsuarios);
+
+        // Módulos
+        setText("mod-platillos-count", totalPlatillos);
+        setText("mod-categorias-count", totalCategorias);
+        setText("mod-pedidos-count", totalPedidos);
+        setText("mod-reservas-count", totalReservas);
+        setText("mod-resenas-pend-count", totalResenasPend);
+        setText("mod-usuarios-count", totalUsuarios);
+
+        // Contactos todavía no están conectados a BD, dejamos "–"
+        setText("mod-contactos-count", "–");
+      } catch (err) {
+        console.error("Error cargando el dashboard de admin:", err);
+        // Si algo truena, dejamos los guiones para no romper la vista
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Proteger admin si más adelante agregas esta función
+      if (window.$app && typeof $app.requireAdmin === "function") {
+        $app.requireAdmin();
+      }
+
+      // Mostrar nombre del usuario si está en localStorage
+      if (window.$app && typeof $app.getUser === "function") {
+        const user = $app.getUser();
+        if (user && user.name) {
+          const lbl = document.getElementById("admin-user-label");
+          if (lbl) lbl.textContent = `Sesión: ${user.name} (${user.role || "usuario"})`;
+        }
+      }
+
+      cargarDashboard();
+    });
   </script>
 </body>
 </html>

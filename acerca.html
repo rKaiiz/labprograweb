@@ -4,32 +4,122 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Acerca de nosotros · La Media Docena</title>
+
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales (layout, carrito, auth, etc.) -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="acerca">
   <main class="container">
-    <section class="hero">
-      <img src="assets/img/interior.jpg" alt="Interior del restaurante" style="width:100%;height:380px;object-fit:cover;border-radius:14px">
-      <div class="panel">
-        <h2 id="aboutName" style="margin:0 0 12px;text-align:center"></h2>
-        <p id="aboutDesc"></p>
-        <h3>Misión</h3>
-        <p id="aboutMission"></p>
-        <h3>Visión</h3>
-        <p id="aboutVision"></p>
-      </div>
+
+    <!-- Hero / encabezado -->
+    <section class="card" style="margin-bottom:16px">
+      <h1 id="about-name" style="margin:0 0 8px">La Media Docena</h1>
+      <p id="about-descripcion" style="margin:0;font-size:14px;color:#555">
+        Cargando información del negocio...
+      </p>
     </section>
+
+    <!-- Misión y Visión -->
+    <section class="card">
+      <h2 style="margin-top:0;font-size:16px">Nuestra esencia</h2>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:8px">
+        <article style="padding:10px;border-radius:12px;background:#fefce8;border:1px solid #fef08a">
+          <h3 style="margin:0 0 6px;font-size:15px;color:#854d0e">Misión</h3>
+          <p id="about-mision" style="margin:0;font-size:13px;color:#6b4f1d;white-space:pre-wrap">
+            –
+          </p>
+        </article>
+
+        <article style="padding:10px;border-radius:12px;background:#eff6ff;border:1px solid #bfdbfe">
+          <h3 style="margin:0 0 6px;font-size:15px;color:#1d4ed8">Visión</h3>
+          <p id="about-vision" style="margin:0;font-size:13px;color:#1e3a8a;white-space:pre-wrap">
+            –
+          </p>
+        </article>
+      </div>
+
+      <p id="about-status" style="margin-top:10px;font-size:12px;color:#777">
+        Información cargada desde la base de datos.
+      </p>
+    </section>
+
   </main>
+
   <script>
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const a = $app.getAbout();
-    document.getElementById('aboutName').textContent = a.name;
-    document.getElementById('aboutDesc').textContent = a.descripcion;
-    document.getElementById('aboutMission').textContent = a.mision;
-    document.getElementById('aboutVision').textContent = a.vision;
-  });
+    const API_BASE = "http://127.0.0.1:5000/api";
+
+    function setAboutStatus(msg, type = "info") {
+      const el = document.getElementById("about-status");
+      if (!el) return;
+      el.textContent = msg || "";
+      if (type === "error") {
+        el.style.color = "#b42318";
+      } else {
+        el.style.color = "#777";
+      }
+    }
+
+    function renderAbout(data) {
+      const nombreEl = document.getElementById("about-name");
+      const descEl   = document.getElementById("about-descripcion");
+      const misEl    = document.getElementById("about-mision");
+      const visEl    = document.getElementById("about-vision");
+
+      const nombre = data.nombre || "La Media Docena";
+      const descripcion = data.descripcion || "Agrega una descripción desde el panel de administración para contar la historia del negocio.";
+      const mision = data.mision || "Aún no se ha definido una misión. Puedes agregarla desde el panel de administración.";
+      const vision = data.vision || "Aún no se ha definido una visión. Puedes agregarla desde el panel de administración.";
+
+      nombreEl.textContent = nombre;
+      document.title = `Acerca de nosotros · ${nombre}`;
+
+      descEl.textContent = descripcion;
+      misEl.textContent = mision;
+      visEl.textContent = vision;
+    }
+
+    async function cargarAboutDesdeAPI() {
+      setAboutStatus("Cargando información desde la base de datos...");
+      try {
+        const res = await fetch(`${API_BASE}/about`);
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          throw new Error(data.error || "Respuesta no válida del servidor.");
+        }
+
+        if (!data || typeof data !== "object") {
+          throw new Error("No se recibió información válida de 'about'.");
+        }
+
+        renderAbout(data);
+        setAboutStatus("Información cargada desde la base de datos.");
+      } catch (err) {
+        console.error("Error al cargar /api/about:", err);
+        setAboutStatus("No se pudo cargar la información desde la base de datos. Se mostrarán valores por defecto.", "error");
+
+        // Fallback opcional usando datos locales de $app (si existen)
+        if (window.$app && typeof $app.getAbout === "function") {
+          try {
+            const localAbout = $app.getAbout();
+            renderAbout(localAbout || {});
+          } catch (e2) {
+            console.error("Error en fallback local getAbout:", e2);
+            renderAbout({});
+          }
+        } else {
+          renderAbout({});
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      cargarAboutDesdeAPI();
+    });
   </script>
 </body>
 </html>

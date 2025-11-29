@@ -1,60 +1,330 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Contacto · La Media Docena</title>
-  <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <link rel="stylesheet" href="assets/css/styles.css" />
+
+  <!-- Scripts globales (layout, auth, etc.) -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="contacto">
   <main class="container">
-    <div class="card">
-      <form id="contactForm">
-        <div class="form-row">
-          <div class="col">
-            <label>Nombre(s)</label>
-            <input class="input" name="nombre" required placeholder="Juan">
-          </div>
-          <div class="col">
-            <label>Apellido(s)</label>
-            <input class="input" name="apellidos" required placeholder="Pérez">
-          </div>
+
+    <!-- Encabezado -->
+    <section class="card" style="margin-bottom:16px">
+      <h1 style="margin-top:0">Contacto</h1>
+      <p style="font-size:14px;color:#555;margin-bottom:4px">
+        ¿Tienes dudas, comentarios o quieres hacer una cotización? Mándanos un mensaje
+        y con gusto te contactamos.
+      </p>
+      <p style="font-size:12px;color:#777;margin:0">
+        Si inicias sesión, tus datos se autocompletan y podrás ver el historial
+        de tus solicitudes más abajo.
+      </p>
+    </section>
+
+    <!-- Formulario de contacto -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:16px">Envíanos un mensaje</h2>
+
+      <form id="contactoForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+        <div>
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" name="nombre" class="input" required placeholder="Tu nombre completo" />
         </div>
-        <div class="form-row" style="margin-top:12px">
-          <div class="col">
-            <label>Correo</label>
-            <input class="input" type="email" name="correo" required placeholder="usuario@correo.com">
-          </div>
-          <div class="col">
-            <label>Teléfono</label>
-            <input class="input" name="telefono" required placeholder="8123456789">
-          </div>
+
+        <div>
+          <label for="correo">Correo electrónico</label>
+          <input id="correo" name="correo" class="input" type="email" placeholder="tucorreo@ejemplo.com" />
         </div>
-        <div class="col" style="margin-top:12px">
-          <label>Mensaje</label>
-          <textarea class="input" name="mensaje" rows="6" required></textarea>
+
+        <div>
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" name="telefono" class="input" placeholder="Número de contacto" />
         </div>
-        <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
-          <a href="index.html" class="btn secondary">Inicio</a>
-          <button class="btn" type="submit">Enviar</button>
+
+        <div style="grid-column:1/-1">
+          <label for="asunto">Asunto</label>
+          <input id="asunto" name="asunto" class="input" placeholder="Ej. Reserva especial, cotización, comentario" />
         </div>
+
+        <div style="grid-column:1/-1">
+          <label for="mensaje">Mensaje *</label>
+          <textarea id="mensaje" name="mensaje" class="input" rows="4" required
+                    placeholder="Cuéntanos en qué podemos ayudarte"></textarea>
+        </div>
+
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button type="reset" class="btn secondary">Limpiar</button>
+          <button type="submit" class="btn">Enviar mensaje</button>
+        </div>
+
+        <p id="formStatus" style="grid-column:1/-1;font-size:12px;margin:4px 0 0;"></p>
       </form>
-    </div>
+    </section>
+
+    <!-- Historial de solicitudes del usuario -->
+    <section class="card" id="historialSection">
+      <h2 style="margin-top:0;font-size:16px">Historial de tus solicitudes</h2>
+      <p id="historialIntro" style="font-size:13px;color:#555;margin-top:0;margin-bottom:8px">
+        Inicia sesión para ver el historial de mensajes enviados desde este módulo.
+      </p>
+
+      <div id="historialWrapper" style="display:none">
+        <p style="font-size:12px;color:#777;margin-top:0;margin-bottom:8px">
+          Se muestran los mensajes de contacto asociados a tu correo y/o teléfono.
+        </p>
+
+        <div style="overflow-x:auto">
+          <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr>
+                <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">FECHA/HORA</th>
+                <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ASUNTO</th>
+                <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">MENSAJE</th>
+                <th style="padding:4px;border-bottom:1px solid #eee;text-align:center">ESTADO</th>
+              </tr>
+            </thead>
+            <tbody id="historialBody">
+              <tr>
+                <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                  Cargando historial...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
   </main>
+
   <script>
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const form = document.getElementById('contactForm');
-    form.addEventListener('submit', e=>{
+    const API_BASE = "http://127.0.0.1:5000/api";
+
+    function setFormStatus(msg, type = "info") {
+      const el = document.getElementById("formStatus");
+      if (!el) return;
+      el.textContent = msg || "";
+      el.style.color = type === "error" ? "#b42318" : "#166534";
+    }
+
+    function formatEstadoChip(estado) {
+      let bg = "#fefce8", border = "#fef08a", text = "#854d0e", label = "Nuevo";
+
+      if (estado === "en_proceso") {
+        bg = "#eff6ff"; border = "#bfdbfe"; text = "#1d4ed8"; label = "En proceso";
+      } else if (estado === "cerrado") {
+        bg = "#ecfdf3"; border = "#bbf7d0"; text = "#166534"; label = "Cerrado";
+      }
+
+      return `
+        <span style="
+          font-size:11px;
+          padding:2px 6px;
+          border-radius:999px;
+          border:1px solid ${border};
+          background:${bg};
+          color:${text};
+          text-transform:capitalize;
+        ">
+          ${label}
+        </span>
+      `;
+    }
+
+    async function enviarContacto(e) {
       e.preventDefault();
-      const fd = new FormData(form);
-      const data = Object.fromEntries(fd.entries());
-      console.log('Contacto (demo):', data);
-      alert('¡Gracias por contactarnos! Te responderemos pronto.');
-      form.reset();
-    })
-  })
+      setFormStatus("");
+
+      const user = window.$app ? $app.getUser() : null;
+
+      const nombre = document.getElementById("nombre").value.trim();
+      const correoInput = document.getElementById("correo");
+      const telefonoInput = document.getElementById("telefono");
+
+      let correo = correoInput.value.trim();
+      let telefono = telefonoInput.value.trim();
+
+      // Si hay usuario logueado y no llenó correo/teléfono, tomamos los del usuario
+      if (user) {
+        if (!correo && user.correo) correo = user.correo;
+        if (!telefono && user.telefono) telefono = user.telefono;
+      }
+
+      const asunto = document.getElementById("asunto").value.trim();
+      const mensaje = document.getElementById("mensaje").value.trim();
+
+      if (!nombre || !mensaje) {
+        setFormStatus("Por favor completa al menos nombre y mensaje.", "error");
+        return;
+      }
+
+      const payload = { nombre, correo, telefono, asunto, mensaje };
+
+      try {
+        const res = await fetch(`${API_BASE}/contactos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "No se pudo enviar el mensaje, intenta más tarde.");
+        }
+
+        setFormStatus("Mensaje enviado correctamente. ¡Gracias por contactarnos!");
+        // Limpiar solo mensaje y asunto para facilitar reenvíos
+        document.getElementById("asunto").value = "";
+        document.getElementById("mensaje").value = "";
+
+        // Actualizar historial si hay usuario logueado
+        if (user) {
+          cargarHistorialUsuario();
+        }
+      } catch (err) {
+        console.error("Error al enviar contacto:", err);
+        setFormStatus(err.message || "Ocurrió un error al enviar tu mensaje.", "error");
+      }
+    }
+
+    async function cargarHistorialUsuario() {
+      const user = window.$app ? $app.getUser() : null;
+      const intro = document.getElementById("historialIntro");
+      const wrapper = document.getElementById("historialWrapper");
+      const tbody = document.getElementById("historialBody");
+
+      if (!user) {
+        // No logueado: ocultar tabla, mostrar mensaje
+        intro.textContent = "Inicia sesión para ver el historial de mensajes enviados desde este módulo.";
+        wrapper.style.display = "none";
+        return;
+      }
+
+      intro.textContent = `Historial de mensajes enviados por: ${user.nombre} (${user.correo || "sin correo"})`;
+      wrapper.style.display = "block";
+
+      // Campos para filtrar
+      const correoUser = (user.correo || "").toLowerCase();
+      const telUser = (user.telefono || "").trim();
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#777">
+            Cargando historial...
+          </td>
+        </tr>
+      `;
+
+      try {
+        const res = await fetch(`${API_BASE}/contactos`);
+        const data = await res.json();
+
+        const lista = Array.isArray(data) ? data : [];
+
+        // Filtrar por correo o teléfono del usuario
+        const propios = lista.filter(c => {
+          const cCorreo = (c.correo || "").toLowerCase();
+          const cTel = (c.telefono || "").trim();
+          let matchCorreo = false;
+          let matchTel = false;
+
+          if (correoUser) {
+            matchCorreo = cCorreo === correoUser;
+          }
+          if (telUser) {
+            matchTel = cTel === telUser;
+          }
+
+          // Si el usuario tiene ambos, aceptamos si coincide alguno
+          return matchCorreo || matchTel;
+        });
+
+        // Ordenar por fecha / ts descendente (lo más nuevo primero)
+        propios.sort((a, b) => {
+          const ta = new Date(a.ts || a.fecha || 0).getTime();
+          const tb = new Date(b.ts || b.fecha || 0).getTime();
+          return tb - ta;
+        });
+
+        tbody.innerHTML = "";
+
+        if (!propios.length) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Aún no tenemos mensajes de contacto asociados a tu cuenta.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        propios.forEach(c => {
+          const tr = document.createElement("tr");
+          const fechaTxt = c.ts || c.fecha || "";
+
+          tr.innerHTML = `
+            <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+              ${fechaTxt}
+            </td>
+            <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#444">
+              ${c.asunto || "(Sin asunto)"}
+            </td>
+            <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#444;max-width:260px">
+              <div style="white-space:pre-wrap">
+                ${(c.mensaje || "").slice(0, 200)}
+              </div>
+              ${
+                c.mensaje && c.mensaje.length > 200
+                  ? '<div style="font-size:11px;color:#999;margin-top:2px">…</div>'
+                  : ''
+              }
+            </td>
+            <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+              ${formatEstadoChip(c.estado)}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Error al cargar historial de contacto:", err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+              No se pudo cargar el historial. Verifica que el servidor Flask esté activo.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("contactoForm");
+      form.addEventListener("submit", enviarContacto);
+
+      // Prefill si hay usuario logueado
+      const user = window.$app ? $app.getUser() : null;
+      if (user) {
+        if (user.nombre) document.getElementById("nombre").value = user.nombre;
+        if (user.correo) document.getElementById("correo").value = user.correo;
+        if (user.telefono) document.getElementById("telefono").value = user.telefono;
+      }
+
+      // Cargar historial según usuario
+      cargarHistorialUsuario();
+
+      // Si cambia el estado de auth (login/logout), refrescar historial
+      if (window.addEventListener) {
+        window.addEventListener("auth:changed", cargarHistorialUsuario);
+      }
+    });
   </script>
 </body>
 </html>

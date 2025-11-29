@@ -3,78 +3,262 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Gestión de Pedidos (Admin) · La Media Docena</title>
+  <title>Pedidos · La Media Docena</title>
+
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="admin">
-  <main class="container">
-    <h2 style="text-align:center;margin:0 0 12px">Gestión de Pedidos</h2>
+<main class="container">
 
-    <div class="card">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <input id="search" class="input" style="max-width:260px" placeholder="Buscar por cliente o folio...">
-        <div style="margin-left:auto"></div>
+  <!-- Encabezado -->
+  <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    <div>
+      <h1 style="margin:0">Gestión de pedidos</h1>
+      <p style="margin:4px 0 0;font-size:13px;color:#555;max-width:600px">
+        Consulta los pedidos realizados por los clientes, revisa el detalle de cada orden
+        y actualiza su estado (<em>En Proceso</em>, <em>Listo</em>, <em>Entregado</em> o <em>Cancelado</em>).
+        Este módulo puede ser utilizado tanto por administración como por el staff.
+      </p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;font-size:12px">
+      <span id="pedidos-user-label" style="color:#374151">Sesión: &mdash;</span>
+      <a href="admin.html" class="btn secondary" style="font-size:12px;padding:4px 10px">← Volver al panel</a>
+    </div>
+  </header>
+
+  <!-- Resumen -->
+  <section class="card" style="margin-bottom:16px">
+    <h2 style="margin-top:0;font-size:15px">Resumen de pedidos</h2>
+    <p style="margin:0 0 10px;font-size:12px;color:#6b7280">
+      Vista rápida de los pedidos registrados en el sistema.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;font-size:13px">
+      <div style="padding:8px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe">
+        <div style="font-size:11px;text-transform:uppercase;color:#1d4ed8;letter-spacing:.04em">Totales</div>
+        <div id="sum-total-pedidos" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#1d4ed8">Pedidos registrados</div>
       </div>
+      <div style="padding:8px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
+        <div style="font-size:11px;text-transform:uppercase;color:#854d0e;letter-spacing:.04em">En Proceso</div>
+        <div id="sum-en-proceso" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#854d0e">Preparándose</div>
+      </div>
+      <div style="padding:8px;border-radius:10px;background:#ecfdf3;border:1px solid #bbf7d0">
+        <div style="font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:.04em">Listos</div>
+        <div id="sum-listo" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#166534">Para entregar/servir</div>
+      </div>
+      <div style="padding:8px;border-radius:10px;background:#eef2ff;border:1px solid #c7d2fe">
+        <div style="font-size:11px;text-transform:uppercase;color:#4f46e5;letter-spacing:.04em">Entregados</div>
+        <div id="sum-entregado" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#4f46e5">Completados</div>
+      </div>
+      <div style="padding:8px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca">
+        <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;letter-spacing:.04em">Cancelados</div>
+        <div id="sum-cancelado" style="font-size:18px;font-weight:600">0</div>
+        <div style="font-size:11px;color:#b91c1c">Pedidos anulados</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Listado -->
+  <section class="card">
+    <h2 style="margin-top:0;font-size:15px">Listado de pedidos</h2>
+
+    <div style="overflow-x:auto;margin-top:8px">
       <table class="table">
         <thead>
-          <tr><th>Folio</th><th>Cliente</th><th>Hora</th><th>Total</th><th>Estado</th><th class="actions">Acciones</th></tr>
+        <tr>
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Total</th>
+          <th>Estado</th>
+          <th>Fecha / hora</th>
+          <th>Detalle</th>
+          <th style="width:220px">Acciones</th>
+        </tr>
         </thead>
-        <tbody id="tbody"></tbody>
+        <tbody id="tblPedidosBody">
+        <tr><td colspan="7" style="text-align:center;font-size:13px;color:#6b7280">Cargando pedidos...</td></tr>
+        </tbody>
       </table>
     </div>
-  </main>
+  </section>
 
-  <script>
-  const STATUS = ['En Proceso','Entregado','Cancelado'];
-  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-pedidos.html'); } }
+</main>
 
-  function render(){
-    const q = document.getElementById('search').value.toLowerCase();
-    const tbody = document.getElementById('tbody');
-    const list = $app.listOrders().filter(o => String(o.id).includes(q) || (o.customer||'').toLowerCase().includes(q));
+<script>
+  const API_BASE = "http://127.0.0.1:5000";
 
-    tbody.innerHTML = list.map(o=>`
-      <tr>
-        <td>#${o.id}</td>
-        <td>${o.customer||'Invitado'}</td>
-        <td>${new Date(o.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
-        <td>${$app.formatCurrency(o.total)}</td>
-        <td>
-          <select data-status="${o.id}" class="input" style="padding:6px 10px">
-            ${STATUS.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}
-          </select>
-        </td>
-        <td class="actions">
-          <button class="btn" data-view="${o.id}">Ver detalles</button>
-          <button class="btn danger" data-del="${o.id}">Eliminar</button>
-        </td>
-      </tr>`).join('');
-
-    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
-      if(!confirm('¿Eliminar pedido?')) return;
-      const list = $app.listOrders().filter(x=>x.id!==Number(b.dataset.del));
-      localStorage.setItem('lmd_orders', JSON.stringify(list));
-      render();
-    }));
-
-    tbody.querySelectorAll('[data-status]').forEach(sel=> sel.addEventListener('change', ()=>{
-      $app.updateOrder(Number(sel.dataset.status), { status: sel.value });
-    }));
-
-    tbody.querySelectorAll('[data-view]').forEach(b=> b.addEventListener('click', ()=>{
-      const o = $app.listOrders().find(x=>x.id===Number(b.dataset.view));
-      alert('Pedido #' + o.id + '\n' + o.items.map(i=>`${i.qty} x ${i.name} (${ $app.formatCurrency(i.price) })`).join('\n'));
-    }));
+  function formatCurrency(n){
+    return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN'}).format(n);
   }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ensure();
-    document.getElementById('search').addEventListener('input', render);
-    render();
-    addEventListener('orders:changed', render);
+  function estadoBadgeHtml(estado){
+    const baseStyle = "display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid ";
+    switch(estado){
+      case "En Proceso":
+        return `<span style="${baseStyle}#f59e0b;background:#fffbeb;color:#92400e">En Proceso</span>`;
+      case "Listo":
+        return `<span style="${baseStyle}#10b981;background:#ecfdf3;color:#065f46">Listo</span>`;
+      case "Entregado":
+        return `<span style="${baseStyle}#6366f1;background:#eef2ff;color:#3730a3">Entregado</span>`;
+      case "Cancelado":
+        return `<span style="${baseStyle}#f97373;background:#fef2f2;color:#b91c1c">Cancelado</span>`;
+      default:
+        return `<span style="${baseStyle}#d1d5db;background:#f3f4f6;color:#374151">${estado||'—'}</span>`;
+    }
+  }
+
+  async function loadPedidos(){
+    const tbody = document.getElementById("tblPedidosBody");
+    if(!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;font-size:13px;color:#6b7280">Cargando pedidos...</td></tr>`;
+
+    try{
+      const resp = await fetch(`${API_BASE}/api/pedidos`);
+      if(!resp.ok) throw new Error("Error al consultar pedidos");
+      const pedidos = await resp.json();
+
+      renderResumen(pedidos);
+      renderTabla(pedidos);
+    }catch(err){
+      console.error("Error loadPedidos:", err);
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;font-size:13px;color:#b91c1c">
+        No se pudieron cargar los pedidos. Verifica que el servidor Flask esté activo.
+      </td></tr>`;
+      renderResumen([]);
+    }
+  }
+
+  function renderResumen(pedidos){
+    const total = pedidos.length;
+    const enProceso = pedidos.filter(p=>p.estado==="En Proceso").length;
+    const listo = pedidos.filter(p=>p.estado==="Listo").length;
+    const entregado = pedidos.filter(p=>p.estado==="Entregado").length;
+    const cancelado = pedidos.filter(p=>p.estado==="Cancelado").length;
+
+    const q = id => document.getElementById(id);
+    if(q("sum-total-pedidos")) q("sum-total-pedidos").textContent = total;
+    if(q("sum-en-proceso")) q("sum-en-proceso").textContent = enProceso;
+    if(q("sum-listo")) q("sum-listo").textContent = listo;
+    if(q("sum-entregado")) q("sum-entregado").textContent = entregado;
+    if(q("sum-cancelado")) q("sum-cancelado").textContent = cancelado;
+  }
+
+  function renderTabla(pedidos){
+    const tbody = document.getElementById("tblPedidosBody");
+    if(!tbody) return;
+
+    if(!pedidos.length){
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;font-size:13px;color:#6b7280">
+        No hay pedidos registrados.
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    pedidos.forEach(ped=>{
+      const tr = document.createElement("tr");
+
+      const fecha = ped.fecha_hora ? new Date(ped.fecha_hora) : null;
+      const fechaTxt = fecha
+        ? fecha.toLocaleDateString("es-MX",{year:"numeric",month:"2-digit",day:"2-digit"}) +
+          " " +
+          fecha.toLocaleTimeString("es-MX",{hour:"2-digit",minute:"2-digit"})
+        : ped.fecha_hora || "";
+
+      const detalleHtml = (ped.detalles || [])
+        .map(d=>`
+          <li style="margin:0 0 2px 0;font-size:12px">
+            <strong>${d.cantidad}×</strong> ${d.nombre_platillo}
+            <span style="color:#6b7280">(${formatCurrency(d.precio_unitario)} c/u)</span>
+          </li>
+        `).join("") || "<li style='font-size:12px;color:#6b7280'>Sin detalle registrado</li>";
+
+      tr.innerHTML = `
+        <td>${ped.id}</td>
+        <td>${ped.cliente_nombre || "—"}</td>
+        <td>${formatCurrency(ped.total || 0)}</td>
+        <td>${estadoBadgeHtml(ped.estado)}</td>
+        <td style="font-size:12px;color:#374151">${fechaTxt}</td>
+        <td>
+          <ul style="padding-left:16px;margin:0;max-height:90px;overflow-y:auto">
+            ${detalleHtml}
+          </ul>
+        </td>
+        <td>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            <button class="btn secondary btn-sm" data-estado="En Proceso">En proceso</button>
+            <button class="btn secondary btn-sm" data-estado="Listo">Listo</button>
+            <button class="btn secondary btn-sm" data-estado="Entregado">Entregado</button>
+            <button class="btn secondary btn-sm" data-estado="Cancelado" style="background:#fee2e2;border-color:#fecaca;color:#b91c1c">
+              Cancelar
+            </button>
+          </div>
+        </td>
+      `;
+
+      const buttons = tr.querySelectorAll("button[data-estado]");
+      buttons.forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const nuevoEstado = btn.getAttribute("data-estado");
+          cambiarEstado(ped.id, nuevoEstado);
+        });
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function cambiarEstado(idPedido, nuevoEstado){
+    if(!confirm(`¿Cambiar el estado del pedido #${idPedido} a "${nuevoEstado}"?`)) return;
+
+    try{
+      const resp = await fetch(`${API_BASE}/api/pedidos/${idPedido}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: nuevoEstado })
+      });
+      if(!resp.ok) throw new Error("Error al actualizar el pedido");
+      await loadPedidos();
+    }catch(err){
+      console.error("Error cambiarEstado:", err);
+      alert("No se pudo actualizar el estado del pedido. Revisa el servidor Flask.");
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Protección por rol: staff o admin
+    if(window.$app && $app.requireStaff){
+      $app.requireStaff();
+    }
+
+    // Mostrar info de sesión
+    const label = document.getElementById("pedidos-user-label");
+    const u = window.$app ? $app.getUser() : null;
+    if(label){
+      if(!u){
+        label.textContent = "Sesión: sin iniciar sesión";
+        label.style.color = "#b91c1c";
+      }else{
+        const rolMostrar = u.role === "admin" ? "Administrador" :
+                           u.role === "staff" ? "Staff" : (u.role || "Usuario");
+        label.innerHTML = `
+          Sesión: <strong>${u.name || "Usuario"}</strong>
+          <span style="font-size:11px;color:#6b7280">(${rolMostrar})</span>
+        `;
+      }
+    }
+
+    loadPedidos();
   });
-  </script>
+</script>
 </body>
 </html>

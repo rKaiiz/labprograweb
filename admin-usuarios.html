@@ -3,123 +3,537 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Gestión de Usuarios (Admin) · La Media Docena</title>
+  <title>Usuarios (Admin) · La Media Docena</title>
+
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="admin">
   <main class="container">
-    <h2 style="text-align:center;margin:0 0 12px">Gestión de Usuarios</h2>
 
-    <div class="card" style="margin-bottom:12px">
-      <form id="userForm" style="display:grid;grid-template-columns:1.2fr 1.3fr 1fr 0.8fr auto;gap:8px;align-items:end">
-        <input type="hidden" name="id" id="id">
-        <div>
-          <label>Nombre completo</label>
-          <input class="input" name="name" required>
+    <!-- Encabezado -->
+    <header style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+      <div>
+        <h1 style="margin:0">Gestión de usuarios</h1>
+        <p style="margin:4px 0 0;font-size:13px;color:#555;max-width:520px">
+          Administra las cuentas que pueden acceder al sistema: crea nuevos usuarios, asigna roles
+          y activa o desactiva accesos.
+        </p>
+      </div>
+      <nav style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn secondary" href="admin.html">← Volver al panel</a>
+        <a class="btn secondary" href="login.html">Probar login</a>
+      </nav>
+    </header>
+
+    <!-- Resumen -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:15px">Resumen</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;font-size:13px">
+        <div style="padding:8px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe">
+          <div style="font-size:11px;text-transform:uppercase;color:#1d4ed8;letter-spacing:.04em">Total</div>
+          <div id="stat-total" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#1d4ed8">Usuarios registrados</div>
         </div>
-        <div>
-          <label>Correo</label>
-          <input class="input" name="email" type="email" required>
+        <div style="padding:8px;border-radius:10px;background:#ecfdf3;border:1px solid #bbf7d0">
+          <div style="font-size:11px;text-transform:uppercase;color:#166534;letter-spacing:.04em">Activos</div>
+          <div id="stat-activos" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#166534">Con acceso</div>
         </div>
-        <div>
-          <label>Teléfono</label>
-          <input class="input" name="phone" pattern="[0-9]{10}" placeholder="0000000000">
+        <div style="padding:8px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca">
+          <div style="font-size:11px;text-transform:uppercase;color:#b91c1c;letter-spacing:.04em">Inactivos</div>
+          <div id="stat-inactivos" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#b91c1c">Acceso deshabilitado</div>
         </div>
+        <div style="padding:8px;border-radius:10px;background:#fefce8;border:1px solid #fef08a">
+          <div style="font-size:11px;text-transform:uppercase;color:#854d0e;letter-spacing:.04em">Admins</div>
+          <div id="stat-admins" style="font-size:18px;font-weight:600">–</div>
+          <div style="font-size:11px;color:#854d0e">Con rol administrador</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Formulario alta / edición -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:15px">Alta / edición de usuario</h2>
+
+      <form id="usuarioForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+        <input type="hidden" id="user-id" />
+
         <div>
-          <label>Rol</label>
-          <select class="input" name="role" required>
-            <option value="user">Cliente</option>
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" class="input" required placeholder="Nombre completo del usuario"/>
+        </div>
+
+        <div>
+          <label for="correo">Correo electrónico *</label>
+          <input id="correo" type="email" class="input" required placeholder="correo@ejemplo.com"/>
+        </div>
+
+        <div>
+          <label for="telefono">Teléfono</label>
+          <input id="telefono" class="input" placeholder="Número de contacto (opcional)"/>
+        </div>
+
+        <div>
+          <label for="role">Rol *</label>
+          <select id="role" class="input" required>
+            <option value="user">Usuario</option>
             <option value="admin">Administrador</option>
           </select>
+          <p style="margin:4px 0 0;font-size:11px;color:#777">
+            El rol <strong>Administrador</strong> puede acceder al panel de administración.
+          </p>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn" type="submit" id="saveBtn">Guardar</button>
-          <button class="btn secondary" type="button" id="clearBtn">Limpiar</button>
+
+        <div>
+          <label for="password">Contraseña <span id="password-label-extra" style="font-weight:normal;color:#777;font-size:11px"></span></label>
+          <input id="password" type="password" class="input" placeholder="Mínimo 4 caracteres"/>
+          <p style="margin:4px 0 0;font-size:11px;color:#777">
+            Al editar un usuario, solo se cambiará si escribes una nueva contraseña.
+          </p>
+        </div>
+
+        <div id="activo-wrapper" style="display:none;align-self:center">
+          <label style="font-size:13px;color:#333">
+            <input type="checkbox" id="activo" style="margin-right:4px"/>
+            Usuario activo (puede iniciar sesión)
+          </label>
+        </div>
+
+        <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:4px">
+          <button type="button" class="btn secondary" id="btn-nuevo">Nuevo</button>
+          <button type="submit" class="btn" id="btn-guardar">Guardar usuario</button>
+        </div>
+
+        <p id="formStatus" style="grid-column:1/-1;font-size:12px;margin:4px 0 0;"></p>
+      </form>
+    </section>
+
+    <!-- Filtros + listado -->
+    <section class="card">
+      <h2 style="margin-top:0;font-size:15px">Listado de usuarios</h2>
+
+      <form id="filtrosForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;align-items:end;margin-bottom:10px">
+        <div>
+          <label for="filtro-busqueda">Buscar</label>
+          <input id="filtro-busqueda" class="input" placeholder="Nombre o correo">
+        </div>
+        <div>
+          <label for="filtro-role">Rol</label>
+          <select id="filtro-role" class="input">
+            <option value="">Todos</option>
+            <option value="admin">Administradores</option>
+            <option value="user">Usuarios</option>
+          </select>
+        </div>
+        <div>
+          <label for="filtro-activo">Estado</label>
+          <select id="filtro-activo" class="input">
+            <option value="">Todos</option>
+            <option value="1">Activos</option>
+            <option value="0">Inactivos</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          <button type="button" class="btn secondary" id="btn-limpiar-filtros">Limpiar</button>
+          <button type="submit" class="btn">Aplicar filtros</button>
         </div>
       </form>
-    </div>
 
-    <div class="card">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <input id="search" class="input" style="max-width:260px" placeholder="Buscar por nombre o correo...">
+      <div style="overflow-x:auto">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ID</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">USUARIO</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">CONTACTO</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ROL</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ESTADO</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:left">ALTA</th>
+              <th style="padding:4px;border-bottom:1px solid #eee;text-align:center">ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody id="usuarios-body">
+            <tr>
+              <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Cargando usuarios...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <table class="table">
-        <thead>
-          <tr><th>ID</th><th>Nombre</th><th>Correo</th><th>Teléfono</th><th>Rol</th><th class="actions">Acciones</th></tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+    </section>
+
   </main>
 
   <script>
-  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-usuarios.html'); } }
+    const API_BASE = "http://127.0.0.1:5000/api";
 
-  function render(){
-    const tbody = document.getElementById('tbody');
-    const q = document.getElementById('search').value.toLowerCase();
-    const users = $app.getUsers().filter(u => (u.name||'').toLowerCase().includes(q) || (u.email||'').toLowerCase().includes(q));
+    let todosUsuarios = [];
+    let usuariosFiltrados = [];
+    let editandoId = null;
 
-    tbody.innerHTML = users.map(u=>`
-      <tr>
-        <td>${u.id}</td>
-        <td>${u.name}</td>
-        <td>${u.email}</td>
-        <td>${u.phone||''}</td>
-        <td>${u.role==='admin' ? 'Administrador' : 'Cliente'}</td>
-        <td class="actions">
-          <button class="btn" data-edit="${u.id}">Editar</button>
-          <button class="btn danger" data-del="${u.id}">Eliminar</button>
-        </td>
-      </tr>`).join('');
+    function setStatus(msg, type = "info") {
+      const el = document.getElementById("formStatus");
+      if (!el) return;
+      el.textContent = msg || "";
+      el.style.color = type === "error" ? "#b42318" : "#166534";
+    }
 
-    tbody.querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=>{
-      const u = $app.getUsers().find(x=>x.id===Number(b.dataset.edit));
-      document.getElementById('id').value = u.id;
-      const f = document.getElementById('userForm');
-      f.name.value = u.name; f.email.value = u.email; f.phone.value = u.phone||''; f.role.value = u.role;
-      document.getElementById('saveBtn').textContent = 'Actualizar';
-    }));
+    function setResumen() {
+      const total = todosUsuarios.length;
+      const activos = todosUsuarios.filter(u => String(u.activo) === "1").length;
+      const inactivos = total - activos;
+      const admins = todosUsuarios.filter(u => u.role === "admin").length;
 
-    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
-      if(!confirm('¿Eliminar usuario?')) return;
-      const list = $app.getUsers().filter(x=>x.id!==Number(b.dataset.del));
-      $app.saveUsers(list); render();
-    }));
-  }
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
 
-  function clearForm(){
-    const f = document.getElementById('userForm'); f.reset(); document.getElementById('id').value='';
-    document.getElementById('saveBtn').textContent = 'Guardar';
-  }
+      setText("stat-total", total);
+      setText("stat-activos", activos);
+      setText("stat-inactivos", inactivos);
+      setText("stat-admins", admins);
+    }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ensure();
-    document.getElementById('search').addEventListener('input', render);
-    document.getElementById('clearBtn').addEventListener('click', clearForm);
+    function aplicarFiltros() {
+      const txt = document.getElementById("filtro-busqueda").value.trim().toLowerCase();
+      const rol = document.getElementById("filtro-role").value;
+      const act = document.getElementById("filtro-activo").value; // "", "1", "0"
 
-    document.getElementById('userForm').addEventListener('submit', (e)=>{
-      e.preventDefault();
-      const f = e.target; const fd = new FormData(f);
-      const id = Number(fd.get('id')||0);
-      const list = $app.getUsers();
-      if(id){
-        const u = list.find(x=>x.id===id); if(!u) return;
-        Object.assign(u, {name:fd.get('name'), email:fd.get('email'), phone:fd.get('phone'), role:fd.get('role')});
-      }else{
-        const next = (list[list.length-1]?.id||0)+1;
-        list.push({ id:next, name:fd.get('name'), email:fd.get('email'), phone:fd.get('phone'), role:fd.get('role') });
+      usuariosFiltrados = todosUsuarios.filter(u => {
+        let okTxt = true;
+        let okRol = true;
+        let okAct = true;
+
+        if (txt) {
+          const blob = ((u.nombre || "") + " " + (u.correo || "")).toLowerCase();
+          okTxt = blob.includes(txt);
+        }
+
+        if (rol) {
+          okRol = (u.role === rol);
+        }
+
+        if (act !== "") {
+          okAct = (String(u.activo) === String(act));
+        }
+
+        return okTxt && okRol && okAct;
+      });
+
+      renderUsuarios();
+    }
+
+    function renderUsuarios() {
+      const tbody = document.getElementById("usuarios-body");
+      tbody.innerHTML = "";
+
+      if (!usuariosFiltrados.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#777">
+              No hay usuarios que coincidan con los filtros actuales.
+            </td>
+          </tr>
+        `;
+        return;
       }
-      $app.saveUsers(list);
-      clearForm();
-      render();
-    });
 
-    render();
-    addEventListener('users:changed', render);
-  });
+      usuariosFiltrados.forEach(u => {
+        const tr = document.createElement("tr");
+
+        // Rol chip
+        let rolBg = "#eff6ff", rolBorder = "#bfdbfe", rolText = "#1d4ed8", rolLabel = "Usuario";
+        if (u.role === "admin") {
+          rolBg = "#fef2f2"; rolBorder = "#fecaca"; rolText = "#b91c1c"; rolLabel = "Administrador";
+        }
+
+        // Activo chip
+        let actBg = "#ecfdf3", actBorder = "#bbf7d0", actText = "#166534", actLabel = "Activo";
+        if (String(u.activo) !== "1") {
+          actBg = "#fef2f2"; actBorder = "#fecaca"; actText = "#b91c1c"; actLabel = "Inactivo";
+        }
+
+        const fecha = u.fecha_registro || "";
+
+        tr.innerHTML = `
+          <td style="padding:4px;border-bottom:1px solid #eee">${u.id}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee">
+            <strong>${u.nombre || ""}</strong><br>
+            <span style="font-size:11px;color:#777">#${u.id}</span>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            <div>${u.correo || ""}</div>
+            <div>${u.telefono || ""}</div>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:left">
+            <span style="
+              font-size:11px;
+              padding:2px 6px;
+              border-radius:999px;
+              border:1px solid ${rolBorder};
+              background:${rolBg};
+              color:${rolText};
+              text-transform:capitalize;
+            ">
+              ${rolLabel}
+            </span>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:left">
+            <span style="
+              font-size:11px;
+              padding:2px 6px;
+              border-radius:999px;
+              border:1px solid ${actBorder};
+              background:${actBg};
+              color:${actText};
+              text-transform:capitalize;
+            ">
+              ${actLabel}
+            </span>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            ${fecha}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center;font-size:11px">
+            <button class="btn secondary btn-editar" data-id="${u.id}" style="padding:2px 6px;margin:1px">
+              Editar
+            </button>
+            <button class="btn secondary btn-toggle" data-id="${u.id}" style="padding:2px 6px;margin:1px">
+              ${String(u.activo) === "1" ? "Desactivar" : "Activar"}
+            </button>
+            <button class="btn secondary btn-eliminar" data-id="${u.id}" style="padding:2px 6px;margin:1px">
+              Eliminar
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function cargarUsuarios() {
+      const tbody = document.getElementById("usuarios-body");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#777">
+            Cargando usuarios...
+          </td>
+        </tr>
+      `;
+
+      try {
+        const res = await fetch(`${API_BASE}/usuarios`);
+        const data = await res.json();
+        todosUsuarios = Array.isArray(data) ? data : [];
+        setResumen();
+        aplicarFiltros();
+      } catch (err) {
+        console.error("Error al cargar usuarios:", err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+              No se pudieron cargar los usuarios. Verifica que el servidor Flask esté activo.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function limpiarFormulario() {
+      editandoId = null;
+      document.getElementById("user-id").value = "";
+      document.getElementById("nombre").value = "";
+      document.getElementById("correo").value = "";
+      document.getElementById("telefono").value = "";
+      document.getElementById("role").value = "user";
+      document.getElementById("password").value = "";
+      document.getElementById("activo").checked = true;
+      document.getElementById("activo-wrapper").style.display = "none";
+      document.getElementById("password-label-extra").textContent = "(obligatoria para nuevo usuario)";
+      setStatus("");
+      document.getElementById("btn-guardar").textContent = "Guardar usuario";
+    }
+
+    function llenarFormularioParaEditar(usuario) {
+      editandoId = usuario.id;
+      document.getElementById("user-id").value = usuario.id;
+      document.getElementById("nombre").value = usuario.nombre || "";
+      document.getElementById("correo").value = usuario.correo || "";
+      document.getElementById("telefono").value = usuario.telefono || "";
+      document.getElementById("role").value = usuario.role || "user";
+      document.getElementById("password").value = "";
+      document.getElementById("activo").checked = String(usuario.activo) === "1";
+      document.getElementById("activo-wrapper").style.display = "block";
+      document.getElementById("password-label-extra").textContent = "(dejar en blanco para no cambiar)";
+      setStatus(`Editando usuario #${usuario.id}`);
+      document.getElementById("btn-guardar").textContent = "Actualizar usuario";
+    }
+
+    async function guardarUsuario(e) {
+      e.preventDefault();
+      setStatus("");
+
+      const id = editandoId;
+      const nombre = document.getElementById("nombre").value.trim();
+      const correo = document.getElementById("correo").value.trim();
+      const telefono = document.getElementById("telefono").value.trim();
+      const role = document.getElementById("role").value;
+      const password = document.getElementById("password").value;
+      const activo = document.getElementById("activo").checked ? 1 : 0;
+
+      if (!nombre || !correo) {
+        setStatus("Nombre y correo son obligatorios.", "error");
+        return;
+      }
+
+      const payload = { nombre, correo, role, telefono };
+
+      // En creación siempre es obligatorio password
+      if (!id) {
+        if (!password || password.length < 4) {
+          setStatus("La contraseña es obligatoria y debe tener al menos 4 caracteres.", "error");
+          return;
+        }
+        payload.password = password;
+      } else {
+        // En edición solo se manda password si el campo no está vacío
+        if (password) {
+          payload.password = password;
+        }
+        payload.activo = activo;
+      }
+
+      try {
+        let res;
+        if (!id) {
+          res = await fetch(`${API_BASE}/usuarios`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          res = await fetch(`${API_BASE}/usuarios/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "No se pudo guardar el usuario.");
+        }
+
+        setStatus(!id ? "Usuario creado correctamente." : "Usuario actualizado correctamente.");
+        await cargarUsuarios();
+        if (!id) limpiarFormulario();
+      } catch (err) {
+        console.error("Error al guardar usuario:", err);
+        setStatus(err.message || "Ocurrió un error al guardar el usuario.", "error");
+      }
+    }
+
+    async function toggleActivo(id) {
+      const usuario = todosUsuarios.find(u => u.id == id);
+      if (!usuario) return;
+
+      const nuevoEstado = String(usuario.activo) === "1" ? 0 : 1;
+      const payload = { activo: nuevoEstado };
+
+      try {
+        const res = await fetch(`${API_BASE}/usuarios/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "No se pudo actualizar el estado.");
+        }
+        await cargarUsuarios();
+      } catch (err) {
+        console.error("Error al cambiar estado usuario:", err);
+        alert(err.message || "No se pudo cambiar el estado del usuario.");
+      }
+    }
+
+    async function eliminarUsuario(id) {
+      if (!confirm("¿Seguro que quieres eliminar este usuario? Esta acción no se puede deshacer.")) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/usuarios/${id}`, {
+          method: "DELETE"
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.error || "No se pudo eliminar el usuario.");
+        }
+        await cargarUsuarios();
+        if (editandoId == id) {
+          limpiarFormulario();
+        }
+      } catch (err) {
+        console.error("Error al eliminar usuario:", err);
+        alert(err.message || "No se pudo eliminar el usuario.");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Proteger ruta si en algún momento agregas requireAdmin
+      if (window.$app && typeof $app.requireAdmin === "function") {
+        $app.requireAdmin();
+      }
+
+      // Botones formulario
+      document.getElementById("usuarioForm").addEventListener("submit", guardarUsuario);
+      document.getElementById("btn-nuevo").addEventListener("click", limpiarFormulario);
+
+      // Filtros
+      document.getElementById("filtrosForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        aplicarFiltros();
+      });
+      document.getElementById("btn-limpiar-filtros").addEventListener("click", () => {
+        document.getElementById("filtro-busqueda").value = "";
+        document.getElementById("filtro-role").value = "";
+        document.getElementById("filtro-activo").value = "";
+        aplicarFiltros();
+      });
+      document.getElementById("filtro-busqueda").addEventListener("input", aplicarFiltros);
+
+      // Acciones en tabla
+      document.getElementById("usuarios-body").addEventListener("click", (e) => {
+        const btnEditar = e.target.closest(".btn-editar");
+        const btnToggle = e.target.closest(".btn-toggle");
+        const btnEliminar = e.target.closest(".btn-eliminar");
+
+        if (btnEditar) {
+          const id = btnEditar.dataset.id;
+          const usuario = todosUsuarios.find(u => u.id == id);
+          if (usuario) llenarFormularioParaEditar(usuario);
+        } else if (btnToggle) {
+          const id = btnToggle.dataset.id;
+          toggleActivo(id);
+        } else if (btnEliminar) {
+          const id = btnEliminar.dataset.id;
+          eliminarUsuario(id);
+        }
+      });
+
+      // Estado inicial formulario
+      limpiarFormulario();
+      // Cargar usuarios
+      cargarUsuarios();
+    });
   </script>
 </body>
 </html>

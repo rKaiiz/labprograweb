@@ -3,86 +3,447 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Carrito / Pedidos · La Media Docena</title>
+  <title>Carrito y pedidos · La Media Docena</title>
+
+  <!-- Estilos globales -->
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="pedidos">
   <main class="container">
-    <section class="cart-list" id="cartList"></section>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px">
-      <div class="total" id="total">$ 0.00 MXN</div>
-      <div style="display:flex;gap:8px">
-        <a class="btn secondary" href="menu.html">Seguir comprando</a>
-        <button class="btn" id="checkout">Realizar Pedido</button>
+
+    <!-- Encabezado -->
+    <header style="margin-bottom:16px">
+      <h1 style="margin:0 0 4px">Carrito y pedidos</h1>
+      <p style="margin:0;font-size:13px;color:#555">
+        Revisa tu carrito, ajusta las cantidades y confirma tu pedido para que lo preparemos en La Media Docena.
+      </p>
+    </header>
+
+    <!-- SECCIÓN CARRITO / NUEVO PEDIDO -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0">Mi carrito</h2>
+
+      <form id="pedidoForm">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:10px">
+          <div>
+            <label for="pedido-nombre">Nombre del cliente</label>
+            <input
+              class="input"
+              id="pedido-nombre"
+              name="nombre"
+              placeholder="Ej. Juan Pérez"
+            >
+            <p style="margin:4px 0 0;font-size:11px;color:#777">
+              Puedes dejarlo vacío y se registrará como <strong>Invitado</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;margin-top:8px">
+          <table class="table" style="width:100%;border-collapse:collapse;font-size:13px" id="tabla-carrito">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Platillo</th>
+                <th style="text-align:right;padding:4px;border-bottom:1px solid #eee">Precio</th>
+                <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Cantidad</th>
+                <th style="text-align:right;padding:4px;border-bottom:1px solid #eee">Subtotal</th>
+                <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="carrito-body">
+              <tr>
+                <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                  Cargando carrito...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <p id="carrito-resumen" style="margin:0;font-size:13px;color:#555">
+            —
+          </p>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <p style="margin:0;font-size:14px;font-weight:600">
+              Total: <span id="carrito-total">$0.00</span>
+            </p>
+            <button class="btn secondary" type="button" id="btn-vaciar">
+              Vaciar carrito
+            </button>
+            <button class="btn" type="submit" id="btn-confirmar">
+              Confirmar pedido
+            </button>
+          </div>
+        </div>
+
+        <p id="pedido-msg" style="margin-top:10px;font-size:13px;display:none"></p>
+      </form>
+    </section>
+
+    <!-- SECCIÓN PEDIDOS RECIENTES (BACKEND) -->
+    <section class="card">
+      <h2 style="margin-top:0">Pedidos recientes</h2>
+      <p style="margin:0 0 8px;font-size:12px;color:#777">
+        Vista rápida de los últimos pedidos registrados (información general del sistema).
+      </p>
+
+      <div style="overflow-x:auto;max-height:260px">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">#</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Cliente</th>
+              <th style="text-align:right;padding:4px;border-bottom:1px solid #eee">Total</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Estado</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Fecha/Hora</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-pedidos-recientes">
+            <tr>
+              <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Cargando pedidos...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </div>
+    </section>
+
   </main>
 
   <script>
-  function render(){
-    const container = document.getElementById('cartList');
-    const cart = $app.getCart();
-    const products = (window.APP_DATA?.products)||[];
+    const API_BASE = "http://127.0.0.1:5000/api";
 
-    if(cart.length===0){
-      container.innerHTML = `<div class="card">Tu carrito está vacío. <a href="menu.html">Ir al menú</a></div>`;
-      document.getElementById('total').textContent = $app.formatCurrency(0);
-      return;
+    let platillosCache = [];
+
+    function formatMoney(n){
+      if(window.$app && typeof $app.formatCurrency === "function"){
+        return $app.formatCurrency(Number(n || 0));
+      }
+      return `$${Number(n || 0).toFixed(2)}`;
     }
 
-    let total = 0;
-    container.innerHTML = cart.map(item => {
-      const p = products.find(pp => pp.id===item.id);
-      const line = p.price * item.qty; total += line;
-      return `
-        <div class="cart-item">
-          <img src="${p.img}" alt="${p.name}">
-          <div>
-            <strong>${p.name}</strong><br>
-            <small>${$app.formatCurrency(p.price)} c/u</small>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-            <div class="qty">
-              <button aria-label="menos" data-minus="${p.id}">−</button>
-              <span>${item.qty}</span>
-              <button aria-label="más" data-plus="${p.id}">+</button>
+    function mostrarMensajePedido(texto, tipo = "info"){
+      const p = document.getElementById("pedido-msg");
+      if(!p) return;
+      p.style.display = "block";
+      p.textContent = texto;
+      if(tipo === "ok"){
+        p.style.color = "#1a7f37";
+      } else if(tipo === "error"){
+        p.style.color = "#b42318";
+      } else {
+        p.style.color = "#555";
+      }
+    }
+
+    function getCartDetailed(){
+      if(!window.$app) return { items: [], total: 0 };
+
+      const cart = $app.getCart() || [];
+      let items = [];
+      let total = 0;
+
+      cart.forEach(item => {
+        const plat = platillosCache.find(p => p.id === item.id);
+        if(!plat) return; // Si el platillo ya no existe, lo ignoramos
+
+        const qty = item.qty || 0;
+        const precio = Number(plat.precio || 0);
+        const subtotal = qty * precio;
+
+        items.push({
+          id_platillo: plat.id,
+          nombre_platillo: plat.nombre,
+          precio_unitario: precio,
+          cantidad: qty,
+          subtotal: subtotal,
+          platillo: plat
+        });
+
+        total += subtotal;
+      });
+
+      return { items, total };
+    }
+
+    function renderCarrito(){
+      const tbody = document.getElementById("carrito-body");
+      const resumen = document.getElementById("carrito-resumen");
+      const totalSpan = document.getElementById("carrito-total");
+      const btnConfirmar = document.getElementById("btn-confirmar");
+      const btnVaciar = document.getElementById("btn-vaciar");
+
+      const { items, total } = getCartDetailed();
+
+      tbody.innerHTML = "";
+
+      if(!items.length){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+              Tu carrito está vacío. Ve al menú para agregar platillos.
+            </td>
+          </tr>
+        `;
+        resumen.textContent = "No hay productos en tu carrito.";
+        totalSpan.textContent = formatMoney(0);
+        if(btnConfirmar) btnConfirmar.disabled = true;
+        if(btnVaciar) btnVaciar.disabled = true;
+        return;
+      }
+
+      items.forEach(entry => {
+        const { platillo, cantidad, subtotal } = {
+          platillo: entry.platillo,
+          cantidad: entry.cantidad,
+          subtotal: entry.subtotal
+        };
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="padding:4px;border-bottom:1px solid #eee">
+            <strong>${platillo.nombre}</strong>
+            ${platillo.descripcion ? `<div style="font-size:11px;color:#777">${platillo.descripcion}</div>` : ""}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:right">
+            ${formatMoney(platillo.precio)}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <div style="display:inline-flex;align-items:center;gap:4px">
+              <button
+                type="button"
+                class="btn secondary btn-qty"
+                data-id="${platillo.id}"
+                data-delta="-1"
+                style="padding:2px 6px;font-size:11px"
+              >-</button>
+              <span>${cantidad}</span>
+              <button
+                type="button"
+                class="btn secondary btn-qty"
+                data-id="${platillo.id}"
+                data-delta="1"
+                style="padding:2px 6px;font-size:11px"
+              >+</button>
             </div>
-            <div>${$app.formatCurrency(line)}</div>
-            <button class="btn danger" data-remove="${p.id}">Eliminar</button>
-          </div>
-        </div>`;
-    }).join('');
-
-    document.getElementById('total').textContent = $app.formatCurrency(total);
-
-    container.querySelectorAll('[data-minus]').forEach(b=> b.addEventListener('click',()=>{ $app.updateQty(b.dataset.minus, -1); render(); }));
-    container.querySelectorAll('[data-plus]').forEach(b=> b.addEventListener('click',()=>{ $app.updateQty(b.dataset.plus, +1); render(); }));
-    container.querySelectorAll('[data-remove]').forEach(b=> b.addEventListener('click',()=>{ $app.removeFromCart(b.dataset.remove); render(); }));
-  }
-
-  document.addEventListener('DOMContentLoaded', () => {
-    render();
-    document.getElementById('checkout').addEventListener('click', () => {
-      if($app.getCart().length===0){ alert('Agrega productos al carrito primero.'); return; }
-      const cart = $app.getCart();
-      const prods = $app.getProducts();
-      const items = cart.map(ci=>{
-        const p = prods.find(pp=>pp.id===ci.id); return { id:p.id, name:p.name, price:p.price, qty:ci.qty };
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:right">
+            ${formatMoney(subtotal)}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <button
+              type="button"
+              class="btn secondary btn-remove"
+              data-id="${platillo.id}"
+              style="padding:2px 6px;font-size:11px"
+            >
+              Quitar
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
       });
-      const total = items.reduce((a,i)=>a+i.price*i.qty,0);
-      const user = $app.getUser();
-      const orderId = $app.addOrder({
-        items, total, status:'En Proceso',
-        customer: user?.name || 'Invitado',
-        ts: Date.now()
-      });
-      alert('¡Pedido realizado! Tu folio es #' + orderId);
-      $app.setCart([]);
-      render();
+
+      resumen.textContent = `${items.length} producto(s) en el carrito.`;
+      totalSpan.textContent = formatMoney(total);
+      if(btnConfirmar) btnConfirmar.disabled = false;
+      if(btnVaciar) btnVaciar.disabled = false;
+    }
+
+    async function cargarPlatillos() {
+      try {
+        const res = await fetch(`${API_BASE}/platillos`);
+        const data = await res.json();
+        platillosCache = Array.isArray(data) ? data : [];
+      } catch (err) {
+        console.error("Error al cargar platillos:", err);
+        platillosCache = [];
+      }
+    }
+
+    async function confirmarPedido(e){
+      e.preventDefault();
+
+      if(!window.$app){
+        mostrarMensajePedido("La aplicación no está inicializada correctamente.", "error");
+        return;
+      }
+
+      const { items, total } = getCartDetailed();
+
+      if(!items.length){
+        mostrarMensajePedido("Tu carrito está vacío. Agrega platillos antes de confirmar el pedido.", "error");
+        return;
+      }
+
+      const nombreInput = document.getElementById("pedido-nombre");
+      const customer = (nombreInput?.value || "").trim() || "Invitado";
+
+      mostrarMensajePedido("Enviando pedido...", "info");
+
+      try {
+        const payload = {
+          customer,
+          total,
+          items: items.map(i => ({
+            id_platillo: i.id_platillo,
+            nombre_platillo: i.nombre_platillo,
+            precio_unitario: i.precio_unitario,
+            cantidad: i.cantidad,
+            subtotal: i.subtotal
+          }))
+        };
+
+        const res = await fetch(`${API_BASE}/pedidos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if(!res.ok || data.ok === false){
+          console.error("Error al crear pedido:", data);
+          mostrarMensajePedido(data.error || "Ocurrió un error al registrar tu pedido.", "error");
+          return;
+        }
+
+        // Limpiar carrito
+        $app.setCart([]);
+
+        mostrarMensajePedido("¡Gracias! Tu pedido ha sido registrado correctamente.", "ok");
+        if(nombreInput) nombreInput.value = "";
+        renderCarrito();
+        // refrescamos lista de pedidos recientes
+        cargarPedidosRecientes();
+      } catch (err) {
+        console.error("Error al conectar con el servidor:", err);
+        mostrarMensajePedido("No se pudo conectar con el servidor. Intenta de nuevo más tarde.", "error");
+      }
+    }
+
+    function manejarClicksCarrito(e){
+      const btnQty = e.target.closest(".btn-qty");
+      const btnRemove = e.target.closest(".btn-remove");
+
+      if(!window.$app) return;
+
+      if(btnQty){
+        const id = parseInt(btnQty.dataset.id, 10);
+        const delta = parseInt(btnQty.dataset.delta, 10);
+        if(!isNaN(id) && !isNaN(delta)){
+          $app.updateQty(id, delta);
+        }
+      }
+
+      if(btnRemove){
+        const id = parseInt(btnRemove.dataset.id, 10);
+        if(!isNaN(id)){
+          $app.removeFromCart(id);
+        }
+      }
+    }
+
+    async function cargarPedidosRecientes(){
+      const tbody = document.getElementById("tabla-pedidos-recientes");
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+            Cargando pedidos...
+          </td>
+        </tr>
+      `;
+      try {
+        const res = await fetch(`${API_BASE}/pedidos`);
+        const data = await res.json().catch(() => []);
+        const pedidos = Array.isArray(data) ? data : [];
+
+        tbody.innerHTML = "";
+
+        if(!pedidos.length){
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                No hay pedidos registrados aún.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        // Mostrar máximo 10
+        pedidos.slice(0, 10).forEach(p => {
+          const tr = document.createElement("tr");
+          const totalFormatted = formatMoney(p.total || 0);
+          tr.innerHTML = `
+            <td style="padding:4px;border-bottom:1px solid #eee">${p.id}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee">${p.cliente_nombre || "Invitado"}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee;text-align:right">${totalFormatted}</td>
+            <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+              <span style="font-size:11px;padding:2px 6px;border-radius:999px;border:1px solid #ddd">
+                ${p.estado}
+              </span>
+            </td>
+            <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px">
+              ${p.fecha_hora || ""}
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Error al cargar pedidos recientes:", err);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+              No se pudo consultar la información de pedidos.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Si hay usuario logueado, precargar nombre del campo
+      if(window.$app && typeof $app.getUser === "function"){
+        const u = $app.getUser();
+        const input = document.getElementById("pedido-nombre");
+        if(u && input && !input.value){
+          input.value = u.name || "";
+        }
+      }
+
+      await cargarPlatillos();
+      renderCarrito();
+      cargarPedidosRecientes();
+
+      const form = document.getElementById("pedidoForm");
+      if(form){
+        form.addEventListener("submit", confirmarPedido);
+      }
+
+      const tbodyCarrito = document.getElementById("carrito-body");
+      if(tbodyCarrito){
+        tbodyCarrito.addEventListener("click", manejarClicksCarrito);
+      }
+
+      const btnVaciar = document.getElementById("btn-vaciar");
+      if(btnVaciar && window.$app){
+        btnVaciar.addEventListener("click", () => {
+          if(confirm("¿Seguro que deseas vaciar todo el carrito?")){
+            $app.setCart([]);
+          }
+        });
+      }
+
+      // Cuando cambie el carrito (por ejemplo desde el menú), volvemos a renderizar
+      window.addEventListener("cart:changed", renderCarrito);
     });
-  });
   </script>
 </body>
 </html>

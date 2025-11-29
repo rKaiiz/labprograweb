@@ -4,112 +4,677 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Platillos (Admin) · La Media Docena</title>
+
+  <!-- Estilos globales -->
   <link rel="stylesheet" href="assets/css/styles.css"/>
+
+  <!-- Scripts globales -->
   <script defer src="assets/js/data.js"></script>
   <script defer src="assets/js/main.js"></script>
 </head>
 <body data-page="admin">
   <main class="container">
-    <h2 style="text-align:center;margin:0 0 12px">Platillos</h2>
 
-    <div class="card" style="margin-bottom:12px">
-      <form id="newForm" style="display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;gap:8px;align-items:end">
+    <!-- Encabezado -->
+    <header style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:8px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0">Administrar platillos y categorías</h1>
+        <p style="margin:4px 0 0;font-size:13px;color:#555">
+          Gestiona las categorías del menú y los platillos de La Media Docena. Ahora puedes subir imágenes directamente desde tu computadora.
+        </p>
+      </div>
+      <nav style="display:flex;gap:8px;flex-wrap:wrap">
+        <a class="btn secondary" href="admin.html">← Volver al panel</a>
+        <a class="btn secondary" href="menu.html">Ver menú público</a>
+      </nav>
+    </header>
+
+    <!-- CATEGORÍAS -->
+    <section class="card" style="margin-bottom:16px">
+      <h2 style="margin-top:0;font-size:16px">Categorías</h2>
+
+      <form id="catForm" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;align-items:flex-end;margin-bottom:10px">
+        <input type="hidden" id="cat-id">
         <div>
-          <label>Nombre</label>
-          <input class="input" name="name" required>
+          <label for="cat-nombre">Nombre</label>
+          <input class="input" id="cat-nombre" required placeholder="Ej. Desayunos">
         </div>
         <div>
-          <label>Categoría</label>
-          <select class="input" name="category" id="newCat" required></select>
+          <label for="cat-descripcion">Descripción</label>
+          <input class="input" id="cat-descripcion" placeholder="Texto breve de la categoría">
         </div>
-        <div>
-          <label>Precio</label>
-          <input class="input" name="price" type="number" min="1" required>
-        </div>
-        <div>
-          <label>Imagen (URL)</label>
-          <input class="input" name="img" placeholder="https://...">
-        </div>
-        <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
-          <button class="btn" type="submit">Nuevo Platillo</button>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn secondary" type="button" id="cat-cancelar" style="display:none">Cancelar</button>
+          <button class="btn" type="submit" id="cat-submit">Guardar categoría</button>
         </div>
       </form>
-    </div>
 
-    <div class="card">
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
-        <input id="search" class="input" style="max-width:260px" placeholder="Buscar...">
-        <label style="margin-left:auto">Categoría</label>
-        <select id="cat" class="input" style="max-width:200px"></select>
+      <div style="overflow-x:auto">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">ID</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Nombre</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Descripción</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="cat-body">
+            <tr>
+              <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Cargando categorías...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <table class="table">
-        <thead>
-          <tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Disponible</th><th class="actions">Acciones</th></tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+    </section>
+
+    <!-- PLATILLOS -->
+    <section class="card">
+      <h2 style="margin-top:0;font-size:16px">Platillos</h2>
+
+      <!-- Layout 2 columnas: izquierda form, derecha imagen -->
+      <div style="display:grid;grid-template-columns:2fr 1.5fr;gap:16px;margin-bottom:12px">
+
+        <!-- FORM DE PLATILLO (sin input file dentro) -->
+        <form id="platForm" style="display:flex;flex-direction:column;gap:8px">
+          <input type="hidden" id="plat-id">
+          <!-- aquí solo guardamos la ruta devuelta por el backend -->
+          <input type="hidden" id="plat-imagen-path">
+
+          <div>
+            <label for="plat-nombre">Nombre</label>
+            <input class="input" id="plat-nombre" required placeholder="Ej. Chilaquiles verdes">
+          </div>
+
+          <div>
+            <label for="plat-descripcion">Descripción</label>
+            <textarea class="input" id="plat-descripcion" rows="3" placeholder="Breve descripción del platillo."></textarea>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">
+            <div>
+              <label for="plat-precio">Precio (MXN)</label>
+              <input class="input" id="plat-precio" type="number" min="0" step="0.01" required placeholder="Ej. 95.00">
+            </div>
+            <div>
+              <label for="plat-categoria">Categoría</label>
+              <select class="input" id="plat-categoria" required>
+                <option value="">Selecciona una categoría</option>
+              </select>
+            </div>
+            <div>
+              <label for="plat-disponible">Disponible</label>
+              <select class="input" id="plat-disponible">
+                <option value="1">Sí</option>
+                <option value="0">No</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;flex-wrap:wrap">
+            <button class="btn secondary" type="button" id="plat-cancelar" style="display:none">Cancelar edición</button>
+            <button class="btn" type="submit" id="plat-submit">Guardar platillo</button>
+          </div>
+        </form>
+
+        <!-- COLUMNA IMAGEN (ya fuera del form, no puede disparar submit de nada) -->
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div>
+            <label for="plat-imagen-file">Imagen del platillo</label>
+            <input
+              class="input"
+              id="plat-imagen-file"
+              type="file"
+              accept="image/*"
+            >
+            <p style="margin:4px 0 0;font-size:11px;color:#777">
+              Selecciona una imagen desde tu computadora. Se subirá al servidor y se guardará la ruta en la base de datos.
+            </p>
+          </div>
+
+          <div style="border-radius:10px;border:1px dashed #ccc;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px;background:#fafafa">
+            <span style="font-size:12px;color:#777;margin-bottom:6px">Vista previa</span>
+            <img
+              id="plat-imagen-preview"
+              alt="Vista previa del platillo"
+              style="max-width:100%;max-height:180px;object-fit:cover;border-radius:8px;display:none"
+            >
+            <span id="plat-imagen-info" style="margin-top:4px;font-size:11px;color:#999"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tabla de platillos -->
+      <div style="overflow-x:auto">
+        <table class="table" style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">ID</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Nombre</th>
+              <th style="text-align:left;padding:4px;border-bottom:1px solid #eee">Categoría</th>
+              <th style="text-align:right;padding:4px;border-bottom:1px solid #eee">Precio</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Disponible</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Imagen</th>
+              <th style="text-align:center;padding:4px;border-bottom:1px solid #eee">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="plat-body">
+            <tr>
+              <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#777">
+                Cargando platillos...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 
   <script>
-  function ensure(){ if(!$app.isAdmin()){ location.href = 'login.html?next='+encodeURIComponent('admin-platillos.html'); } }
+    const API_BASE = "http://127.0.0.1:5000/api";
 
-  function render(){
-    const tbody = document.getElementById('tbody');
-    const q = document.getElementById('search').value.toLowerCase();
-    const cat = document.getElementById('cat').value;
-    const list = $app.getProducts()
-      .filter(p => (cat==='all' || p.category===cat))
-      .filter(p => p.name.toLowerCase().includes(q));
+    let categorias = [];
+    let platillos = [];
+    let editPlatilloId = null;
 
-    tbody.innerHTML = list.map(p=>`
-      <tr>
-        <td>${p.name}</td>
-        <td>${p.category}</td>
-        <td>${$app.formatCurrency(p.price)}</td>
-        <td><input type="checkbox" data-avail="${p.id}" ${p.available!==false? 'checked':''}></td>
-        <td class="actions">
-          <button class="btn danger" data-del="${p.id}">Eliminar</button>
-        </td>
-      </tr>`).join('');
+    function formatMoney(n){
+      if(window.$app && typeof $app.formatCurrency === "function"){
+        return $app.formatCurrency(Number(n || 0));
+      }
+      return `$${Number(n || 0).toFixed(2)}`;
+    }
 
-    tbody.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=>{
-      const list = $app.getProducts().filter(x=>x.id!==b.dataset.del);
-      $app.saveProducts(list); render();
-    }));
+    function showToast(msg){
+      // Puedes sustituir esto por un sistema de alertas más bonito
+      console.log("[ADMIN]", msg);
+      alert(msg);
+    }
 
-    tbody.querySelectorAll('[data-avail]').forEach(inp=> inp.addEventListener('change', ()=>{
-      const list = $app.getProducts();
-      const p = list.find(x=>x.id===inp.dataset.avail);
-      if(p){ p.available = inp.checked; $app.saveProducts(list); }
-    }));
-  }
+    // ---------- CATEGORÍAS ----------
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    ensure();
-    const catSel = document.getElementById('cat');
-    const cats = (window.APP_DATA?.categories)||[];
-    catSel.innerHTML = `<option value="all">Todos</option>` + cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-    const newCat = document.getElementById('newCat');
-    newCat.innerHTML = cats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    async function cargarCategorias(){
+      const tbody = document.getElementById("cat-body");
+      try {
+        const res = await fetch(`${API_BASE}/categorias`);
+        const data = await res.json();
+        categorias = Array.isArray(data) ? data : [];
+        renderCategorias();
+        renderSelectCategorias();
+      } catch (err) {
+        console.error("Error cargando categorías:", err);
+        if(tbody){
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+                No se pudieron cargar las categorías. Verifica el servidor.
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
 
-    document.getElementById('search').addEventListener('input', render);
-    catSel.addEventListener('change', render);
+    function renderCategorias(){
+      const tbody = document.getElementById("cat-body");
+      tbody.innerHTML = "";
 
-    document.getElementById('newForm').addEventListener('submit', (e)=>{
+      if(!categorias.length){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" style="padding:6px;text-align:center;font-size:12px;color:#777">
+              No hay categorías registradas.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      categorias.forEach(cat => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="padding:4px;border-bottom:1px solid #eee">${cat.id}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee">${cat.nombre}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            ${cat.descripcion || ""}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <button class="btn secondary btn-cat-edit" data-id="${cat.id}" style="padding:2px 6px;font-size:11px">Editar</button>
+            <button class="btn secondary btn-cat-del" data-id="${cat.id}" style="padding:2px 6px;font-size:11px">Eliminar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderSelectCategorias(){
+      const sel = document.getElementById("plat-categoria");
+      const current = sel.value;
+      sel.innerHTML = `<option value="">Selecciona una categoría</option>`;
+      categorias.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.id;
+        opt.textContent = c.nombre;
+        sel.appendChild(opt);
+      });
+      if(current) sel.value = current;
+    }
+
+    async function guardarCategoria(e){
       e.preventDefault();
-      const fd = new FormData(e.target);
-      const list = $app.getProducts();
-      const id = fd.get('name').toLowerCase().replace(/[^a-z0-9]+/g,'-') + '-' + (Math.random()*1e4|0);
-      list.push({ id, name:fd.get('name'), category:fd.get('category'), price:Number(fd.get('price')), img:fd.get('img')||'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800&auto=format&fit=crop', available:true });
-      $app.saveProducts(list);
-      e.target.reset();
-      render();
-    });
 
-    render();
-    addEventListener('products:changed', render);
-  });
+      const id = document.getElementById("cat-id").value || null;
+      const nombre = document.getElementById("cat-nombre").value.trim();
+      const descripcion = document.getElementById("cat-descripcion").value.trim();
+
+      if(!nombre){
+        showToast("El nombre de la categoría es obligatorio.");
+        return;
+      }
+
+      const payload = { nombre, descripcion };
+
+      try {
+        if(id){
+          // update
+          const res = await fetch(`${API_BASE}/categorias/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.ok === false){
+            throw new Error(data.error || "No se pudo actualizar la categoría.");
+          }
+          showToast("Categoría actualizada correctamente.");
+        } else {
+          // create
+          const res = await fetch(`${API_BASE}/categorias`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.ok === false){
+            throw new Error(data.error || "No se pudo crear la categoría.");
+          }
+          showToast("Categoría creado correctamente.");
+        }
+        limpiarFormCategoria();
+        cargarCategorias();
+      } catch (err) {
+        console.error("Error guardando categoría:", err);
+        showToast(err.message || "Error al guardar la categoría.");
+      }
+    }
+
+    function limpiarFormCategoria(){
+      document.getElementById("cat-id").value = "";
+      document.getElementById("cat-nombre").value = "";
+      document.getElementById("cat-descripcion").value = "";
+      document.getElementById("cat-submit").textContent = "Guardar categoría";
+      document.getElementById("cat-cancelar").style.display = "none";
+    }
+
+    function cargarDatosCategoria(id){
+      const cat = categorias.find(c => String(c.id) === String(id));
+      if(!cat) return;
+      document.getElementById("cat-id").value = cat.id;
+      document.getElementById("cat-nombre").value = cat.nombre || "";
+      document.getElementById("cat-descripcion").value = cat.descripcion || "";
+      document.getElementById("cat-submit").textContent = "Actualizar categoría";
+      document.getElementById("cat-cancelar").style.display = "inline-flex";
+    }
+
+    async function eliminarCategoria(id){
+      if(!confirm("¿Seguro que deseas eliminar esta categoría? Asegúrate de que ningún platillo la esté usando.")){
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/categorias/${id}`, { method: "DELETE" });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false){
+          throw new Error(data.error || "No se pudo eliminar la categoría.");
+        }
+        showToast("Categoría eliminada.");
+        cargarCategorias();
+        cargarPlatillos();
+      } catch (err) {
+        console.error("Error eliminando categoría:", err);
+        showToast(err.message || "Error al eliminar la categoría.");
+      }
+    }
+
+    // ---------- PLATILLOS ----------
+
+    async function cargarPlatillos(){
+      const tbody = document.getElementById("plat-body");
+      try {
+        const res = await fetch(`${API_BASE}/platillos`);
+        const data = await res.json();
+        platillos = Array.isArray(data) ? data : [];
+        renderPlatillos();
+      } catch (err) {
+        console.error("Error cargando platillos:", err);
+        if(tbody){
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#b42318">
+                No se pudieron cargar los platillos. Verifica el servidor.
+              </td>
+            </tr>
+          `;
+        }
+      }
+    }
+
+    function nombreCategoriaPorId(idCat){
+      const c = categorias.find(c => String(c.id) === String(idCat));
+      return c ? c.nombre : "";
+    }
+
+    function renderPlatillos(){
+      const tbody = document.getElementById("plat-body");
+      tbody.innerHTML = "";
+
+      if(!platillos.length){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="padding:6px;text-align:center;font-size:12px;color:#777">
+              No hay platillos registrados.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      platillos.forEach(p => {
+        const tr = document.createElement("tr");
+        const disponible = Number(p.disponible) === 1;
+        const catNombre = nombreCategoriaPorId(p.id_categoria);
+
+        let imgHtml = "";
+        if(p.imagen){
+          imgHtml = `<img src="${p.imagen}" alt="${p.nombre || ""}" style="width:50px;height:40px;object-fit:cover;border-radius:4px">`;
+        } else {
+          imgHtml = `<span style="font-size:11px;color:#999">Sin imagen</span>`;
+        }
+
+        tr.innerHTML = `
+          <td style="padding:4px;border-bottom:1px solid #eee">${p.id}</td>
+          <td style="padding:4px;border-bottom:1px solid #eee">
+            <strong>${p.nombre}</strong>
+            ${p.descripcion ? `<div style="font-size:11px;color:#777">${p.descripcion}</div>` : ""}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;font-size:12px;color:#555">
+            ${catNombre || "-"}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:right">
+            ${formatMoney(p.precio)}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <span style="
+              font-size:11px;
+              padding:2px 6px;
+              border-radius:999px;
+              border:1px solid ${disponible ? '#c8e6c9' : '#ffcdd2'};
+              background:${disponible ? '#e6f4ea' : '#fce8e6'};
+              color:${disponible ? '#137333' : '#b3261e'};
+            ">
+              ${disponible ? "Sí" : "No"}
+            </span>
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            ${imgHtml}
+          </td>
+          <td style="padding:4px;border-bottom:1px solid #eee;text-align:center">
+            <button class="btn secondary btn-plat-edit" data-id="${p.id}" style="padding:2px 6px;font-size:11px">Editar</button>
+            <button class="btn secondary btn-plat-del" data-id="${p.id}" style="padding:2px 6px;font-size:11px">Eliminar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function limpiarFormPlatillo(){
+      editPlatilloId = null;
+      document.getElementById("plat-id").value = "";
+      document.getElementById("plat-nombre").value = "";
+      document.getElementById("plat-descripcion").value = "";
+      document.getElementById("plat-precio").value = "";
+      document.getElementById("plat-categoria").value = "";
+      document.getElementById("plat-disponible").value = "1";
+      document.getElementById("plat-imagen-path").value = "";
+      const fileInput = document.getElementById("plat-imagen-file");
+      if(fileInput) fileInput.value = "";
+      const img = document.getElementById("plat-imagen-preview");
+      const info = document.getElementById("plat-imagen-info");
+      img.style.display = "none";
+      img.src = "";
+      info.textContent = "";
+      document.getElementById("plat-submit").textContent = "Guardar platillo";
+      document.getElementById("plat-cancelar").style.display = "none";
+    }
+
+    function cargarDatosPlatillo(id){
+      const p = platillos.find(x => String(x.id) === String(id));
+      if(!p) return;
+      editPlatilloId = p.id;
+      document.getElementById("plat-id").value = p.id;
+      document.getElementById("plat-nombre").value = p.nombre || "";
+      document.getElementById("plat-descripcion").value = p.descripcion || "";
+      document.getElementById("plat-precio").value = p.precio || "";
+      document.getElementById("plat-categoria").value = p.id_categoria || "";
+      document.getElementById("plat-disponible").value = Number(p.disponible) ? "1" : "0";
+      document.getElementById("plat-imagen-path").value = p.imagen || "";
+
+      const img = document.getElementById("plat-imagen-preview");
+      const info = document.getElementById("plat-imagen-info");
+      if(p.imagen){
+        img.src = p.imagen;
+        img.style.display = "block";
+        info.textContent = p.imagen;
+      } else {
+        img.style.display = "none";
+        img.src = "";
+        info.textContent = "";
+      }
+
+      document.getElementById("plat-submit").textContent = "Actualizar platillo";
+      document.getElementById("plat-cancelar").style.display = "inline-flex";
+    }
+
+    async function guardarPlatillo(e){
+      e.preventDefault();
+
+      const nombre = document.getElementById("plat-nombre").value.trim();
+      const descripcion = document.getElementById("plat-descripcion").value.trim();
+      const precioStr = document.getElementById("plat-precio").value.trim();
+      const idCat = document.getElementById("plat-categoria").value;
+      const disponibleVal = document.getElementById("plat-disponible").value;
+      const imagenPath = document.getElementById("plat-imagen-path").value.trim();
+
+      if(!nombre || !precioStr || !idCat){
+        showToast("Nombre, precio y categoría son obligatorios.");
+        return;
+      }
+
+      const precio = Number(precioStr);
+      if(isNaN(precio) || precio < 0){
+        showToast("El precio no es válido.");
+        return;
+      }
+
+      const disponible = disponibleVal === "1" ? 1 : 0;
+
+      const payload = {
+        nombre,
+        descripcion,
+        precio,
+        id_categoria: Number(idCat),
+        disponible,
+        imagen: imagenPath || null
+      };
+
+      try {
+        if(editPlatilloId){
+          // update
+          const res = await fetch(`${API_BASE}/platillos/${editPlatilloId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.ok === false){
+            throw new Error(data.error || "No se pudo actualizar el platillo.");
+          }
+          showToast("Platillo actualizado correctamente.");
+        } else {
+          // create
+          const res = await fetch(`${API_BASE}/platillos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json().catch(()=>({}));
+          if(!res.ok || data.ok === false){
+            throw new Error(data.error || "No se pudo crear el platillo.");
+          }
+          showToast("Platillo creado correctamente.");
+        }
+
+        limpiarFormPlatillo();
+        cargarPlatillos();
+      } catch (err) {
+        console.error("Error guardando platillo:", err);
+        showToast(err.message || "Error al guardar el platillo.");
+      }
+    }
+
+    async function eliminarPlatillo(id){
+      if(!confirm("¿Seguro que deseas eliminar este platillo?")){
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/platillos/${id}`, { method: "DELETE" });
+        const data = await res.json().catch(()=>({}));
+        if(!res.ok || data.ok === false){
+          throw new Error(data.error || "No se pudo eliminar el platillo.");
+        }
+        showToast("Platillo eliminado.");
+        if(editPlatilloId === id){
+          limpiarFormPlatillo();
+        }
+        cargarPlatillos();
+      } catch (err) {
+        console.error("Error eliminando platillo:", err);
+        showToast(err.message || "Error al eliminar el platillo.");
+      }
+    }
+
+    // ---------- SUBIR IMAGEN DESDE PC (fuera del form) ----------
+
+    async function manejarSeleccionImagen(e){
+      const input = e.target;
+      const file = input.files && input.files[0];
+      const img = document.getElementById("plat-imagen-preview");
+      const info = document.getElementById("plat-imagen-info");
+      const pathInput = document.getElementById("plat-imagen-path");
+
+      if(!file){
+        img.style.display = "none";
+        img.src = "";
+        info.textContent = "";
+        pathInput.value = "";
+        return;
+      }
+
+      // Vista previa local
+      const reader = new FileReader();
+      reader.onload = ev => {
+        img.src = ev.target.result;
+        img.style.display = "block";
+      };
+      reader.readAsDataURL(file);
+
+      info.textContent = "Subiendo imagen...";
+      pathInput.value = "";
+
+      try {
+        const fd = new FormData();
+        fd.append("imagen", file);
+
+        const res = await fetch(`${API_BASE}/upload-imagen`, {
+          method: "POST",
+          body: fd
+        });
+
+        const data = await res.json().catch(()=>({}));
+
+        if(!res.ok || data.ok === false || !data.path){
+          throw new Error(data.error || "No se pudo subir la imagen.");
+        }
+
+        // Guardamos la ruta devuelta por el backend en el hidden
+        pathInput.value = data.path;
+        info.textContent = data.path;
+      } catch (err) {
+        console.error("Error subiendo imagen:", err);
+        info.textContent = "Error al subir la imagen. Intenta de nuevo.";
+        showToast(err.message || "No se pudo subir la imagen.");
+      }
+    }
+
+    // ---------- INIT ----------
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Proteger admin si tienes esa función
+      if(window.$app && typeof $app.requireAdmin === "function"){
+        $app.requireAdmin();
+      }
+
+      // Categorías
+      document.getElementById("catForm").addEventListener("submit", guardarCategoria);
+      document.getElementById("cat-cancelar").addEventListener("click", limpiarFormCategoria);
+      document.getElementById("cat-body").addEventListener("click", (e) => {
+        const btnEdit = e.target.closest(".btn-cat-edit");
+        const btnDel = e.target.closest(".btn-cat-del");
+        if(btnEdit){
+          const id = btnEdit.dataset.id;
+          cargarDatosCategoria(id);
+        }
+        if(btnDel){
+          const id = btnDel.dataset.id;
+          eliminarCategoria(id);
+        }
+      });
+
+      // Platillos
+      document.getElementById("platForm").addEventListener("submit", guardarPlatillo);
+      document.getElementById("plat-cancelar").addEventListener("click", limpiarFormPlatillo);
+      document.getElementById("plat-body").addEventListener("click", (e) => {
+        const btnEdit = e.target.closest(".btn-plat-edit");
+        const btnDel = e.target.closest(".btn-plat-del");
+        if(btnEdit){
+          const id = btnEdit.dataset.id;
+          cargarDatosPlatillo(id);
+        }
+        if(btnDel){
+          const id = btnDel.dataset.id;
+          eliminarPlatillo(id);
+        }
+      });
+
+      // File input para imagen (fuera del form, cambio ya no puede disparar submit)
+      document.getElementById("plat-imagen-file").addEventListener("change", manejarSeleccionImagen);
+
+      // Cargar datos iniciales
+      cargarCategorias();
+      cargarPlatillos();
+    });
   </script>
 </body>
 </html>
